@@ -23,6 +23,8 @@ export function parseExcelData(file: File): Promise<Candidate[]> {
           email: row.email,
           role: row.role,
           level: row.level,
+          progress: row.progress || 'Pending',
+          location: row.location,
           status: 'Open',
           currentStep: 0,
           steps: INTERVIEW_STEPS.map((step, index) => ({

@@ -1,6 +1,7 @@
 export type CandidateLevel = 'Junior' | 'Mid' | 'Senior' | 'Lead';
 export type InterviewStatus = 'pending' | 'completed' | 'rejected';
 export type CandidateStatus = 'Open' | 'Closed';
+export type CandidateProgress = 'Hired' | 'Rejected' | 'On Hold' | 'Shortlisted' | 'Pending' | 'Offered' | 'Offer Accepted' | 'Offer Rejected';
 
 export const INTERVIEW_STEPS = [
   'Resume Screening',
@@ -24,6 +25,8 @@ export interface Candidate {
   email: string;
   role: string;
   level: CandidateLevel;
+  progress: CandidateProgress;
+  location: string;
   status: CandidateStatus;
   currentStep: number;
   steps: InterviewStep[];
