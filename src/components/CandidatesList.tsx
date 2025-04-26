@@ -1,9 +1,5 @@
-import { ColumnDef } from "@tanstack/react-table"
-import { Candidate } from "../types/interview"
-import { DataTable } from "./ui/data-table"
-import { Button } from "./ui/button"
-import { ArrowUpDown } from "lucide-react"
-import { formatDate } from "../lib/utils"
+import { Candidate } from "../types/interview";
+import { Table, TableBody, TableCaption, TableHead, TableHeader, TableRow } from "./ui/table";
 
 interface CandidatesListProps {
     candidates: Candidate[]
@@ -11,95 +7,7 @@ interface CandidatesListProps {
 }
 
 export function CandidatesList({ candidates, onCandidateClick }: CandidatesListProps) {
-    const columns: ColumnDef<Candidate>[] = [
-        {
-            accessorKey: "name",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Name
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-        },
-        {
-            accessorKey: "role",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Role
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            filterFn: (row, id, value) => {
-                return value === "" || row.getValue(id) === value
-            },
-        },
-        {
-            accessorKey: "status",
-            header: "Status",
-            filterFn: (row, id, value) => {
-                return value === "" || row.getValue(id) === value
-            },
-        },
-        {
-            accessorKey: "level",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Level
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            filterFn: (row, id, value) => {
-                return value === "" || row.getValue(id) === value
-            },
-        },
-        {
-            accessorKey: "createdBy",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Created By
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-        },
-        {
-            accessorKey: "createdAt",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Created Date
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => formatDate(row.getValue("createdAt")),
-        },
-        {
-            accessorKey: "updatedAt",
-            header: ({ column }) => (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Last Updated
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            ),
-            cell: ({ row }) => formatDate(row.getValue("updatedAt")),
-        },
-    ]
+    const columns = ["name", "role", "level", "status", "createdBy", "createdAt", "updatedAt"];
 
     const statusOptions = [
         { label: "Open", value: "Open" },
@@ -124,17 +32,35 @@ export function CandidatesList({ candidates, onCandidateClick }: CandidatesListP
 
     return (
         <div className="container mx-auto py-10">
-            <DataTable
-                columns={columns}
-                data={candidates}
-                filterColumn={["status", "level", "role"]}
-                filterOptions={{
-                    status: statusOptions,
-                    level: levelOptions,
-                    role: roleOptions,
-                }}
-                onRowClick={(row) => onCandidateClick(row.original)}
-            />
+            <Table>
+                <TableCaption>A list of candidates.</TableCaption>
+                <TableHeader>
+                    <TableRow>
+                        {columns.map((column) => (
+                            <TableHead key={column} className="text-left">
+                                {column.charAt(0).toUpperCase() + column.slice(1)}
+                            </TableHead>
+                        ))}
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {candidates.map((candidate) => (
+                        <TableRow
+                            key={candidate.id}
+                            className="cursor-pointer hover:bg-gray-100"
+                            onClick={() => onCandidateClick(candidate)}
+                        >
+                            <td>{candidate.name}</td>
+                            <td>{roleOptions.find(role => role.value === candidate.role)?.label}</td>
+                            <td>{levelOptions.find(level => level.value === candidate.level)?.label}</td>
+                            <td>{statusOptions.find(status => status.value === candidate.status)?.label}</td>
+                            <td>{candidate.createdBy}</td>
+                            <td>{new Date(candidate.createdAt).toLocaleDateString()}</td>
+                            <td>{new Date(candidate.updatedAt).toLocaleDateString()}</td>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </div>
     )
 }

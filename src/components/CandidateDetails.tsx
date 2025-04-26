@@ -3,8 +3,8 @@ import { Candidate, InterviewStatus } from '../types/interview';
 import { Button } from './ui/button';
 import { Textarea } from '../components/ui/textarea';
 import { cn } from '../lib/utils';
-import { FileUpload } from './ui/file-upload';
 import { CheckCircle2, XCircle, Circle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Input } from './ui/input';
 
 interface CandidateDetailsProps {
     candidate: Candidate;
@@ -116,13 +116,15 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
                     </p>
                 </div>
                 <div className="w-64">
-                    <FileUpload
-                        onFileUpload={onCVUpload}
-                        accept={{
-                            'application/pdf': ['.pdf'],
-                            'application/msword': ['.doc'],
-                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+                    <Input
+                        type="file"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                onCVUpload(file);
+                            }
                         }}
+                        accept=".pdf, .doc, .docx"
                     />
                 </div>
             </div>

@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import * as XLSX from 'xlsx-js-style';
-import { Candidate, InterviewStep, INTERVIEW_STEPS } from '../types/interview';
+import { Candidate, INTERVIEW_STEPS } from '../types/interview';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -16,7 +16,7 @@ export function parseExcelData(file: File): Promise<Candidate[]> {
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
-        
+
         const candidates: Candidate[] = jsonData.map((row: any) => ({
           id: crypto.randomUUID(),
           name: row.name,
@@ -34,7 +34,7 @@ export function parseExcelData(file: File): Promise<Candidate[]> {
           updatedAt: new Date(),
           createdBy: row.createdBy || 'System Import'
         }));
-        
+
         resolve(candidates);
       } catch (error) {
         reject(error);
@@ -66,7 +66,7 @@ export function updateCandidateStep(
     currentStep.status = 'completed';
     currentStep.completedAt = new Date();
     currentStep.feedback = feedback;
-    
+
     if (stepId < updatedSteps.length - 1) {
       candidate.currentStep = stepId + 1;
     } else {
