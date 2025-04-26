@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Candidate } from "../types/interview";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import {
@@ -8,7 +8,7 @@ import {
     useReactTable,
     getSortedRowModel,
     SortingState,
-    getPaginationRowModel,
+    PaginationState,
     getFilteredRowModel,
     ColumnFiltersState,
 } from "@tanstack/react-table";
@@ -21,16 +21,50 @@ import {
     levelOptions,
     getProgressStyle,
 } from "./CandidatesList/utils";
+import { fetchPaginatedCandidates } from "@/lib/api";
 
 interface CandidatesListProps {
-    candidates: Candidate[]
     onCandidateClick: (candidate: Candidate) => void
 }
 
-export function CandidatesList({ candidates, onCandidateClick }: CandidatesListProps) {
+export function CandidatesList({ onCandidateClick }: CandidatesListProps) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [columnSizing, setColumnSizing] = useState({})
+    const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+        pageIndex: 0,
+        pageSize: 10,
+    })
+    const [data, setData] = useState<{ items: Candidate[], total: number }>({ items: [], total: 0 })
+    const [isLoading, setIsLoading] = useState(false)
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setIsLoading(true)
+            try {
+                const sortField = sorting[0]?.id
+                const sortOrder = sorting[0]?.desc ? "DESC" : "ASC"
+
+                const filters: Record<string, string> = {}
+                columnFilters.forEach(filter => {
+                    filters[filter.id] = filter.value as string
+                })
+
+                const result = await fetchPaginatedCandidates(
+                    { page: pageIndex + 1, pageSize },
+                    sortField ? { field: sortField, order: sortOrder } : undefined,
+                    Object.keys(filters).length > 0 ? filters : undefined
+                )
+                setData({ items: result.items, total: result.total })
+            } catch (error) {
+                console.error('Error fetching candidates:', error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [pageIndex, pageSize, sorting, columnFilters])
 
     const columns: ColumnDef<Candidate>[] = [
         {
@@ -126,33 +160,38 @@ export function CandidatesList({ candidates, onCandidateClick }: CandidatesListP
     ];
 
     const table = useReactTable({
-        data: candidates,
+        data: data.items,
         columns,
+        pageCount: Math.ceil(data.total / pageSize),
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
+        onPaginationChange: setPagination,
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
         onColumnSizingChange: setColumnSizing,
+        manualPagination: true,
+        manualSorting: true,
+        manualFiltering: true,
         state: {
             sorting,
             columnFilters,
             columnSizing,
+            pagination: { pageIndex, pageSize },
         },
         enableColumnResizing: true,
         columnResizeMode: "onChange",
-        initialState: {
-            pagination: {
-                pageSize: 10,
-            },
-        },
-    });
+    })
 
     return (
         <div className="container mx-auto py-10">
             <FilterInputs table={table} />
-            <div className="rounded-md border mt-4">
+            <div className="rounded-md border mt-4 relative">
+                {isLoading && (
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary"></div>
+                    </div>
+                )}
                 <Table className="overflow-auto">
                     <TableCaption>A list of candidates.</TableCaption>
                     <TableHeader>
@@ -161,10 +200,7 @@ export function CandidatesList({ candidates, onCandidateClick }: CandidatesListP
                                 {headerGroup.headers.map((header) => (
                                     <TableHead
                                         key={header.id}
-                                        style={{
-                                            width: header.getSize(),
-                                            position: "relative"
-                                        }}
+                                        className="text-center"
                                     >
                                         {header.isPlaceholder
                                             ? null
@@ -213,7 +249,11 @@ export function CandidatesList({ candidates, onCandidateClick }: CandidatesListP
                     </TableBody>
                 </Table>
             </div>
-            <PaginationControls table={table} />
+            <PaginationControls
+                table={table}
+                totalItems={data.total}
+                isLoading={isLoading}
+            />
         </div>
     );
 }
