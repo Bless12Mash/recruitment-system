@@ -1,8 +1,9 @@
-import { InterviewStatus } from '../../types/interview';
+import { InterviewStatus, CandidateProgress } from '../../types/interview';
 import { CheckCircle2, XCircle, Circle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export const getStepIcon = (status: InterviewStatus) => {
     switch (status) {
@@ -34,8 +35,10 @@ interface CandidateHeaderProps {
     location: string;
     progress: string;
     status: string;
+    cv?: File;
     onCVUpload: (file: File) => void;
     onStatusChange: () => void;
+    onProgressChange?: (progress: CandidateProgress) => void;
 }
 
 export const CandidateHeader = ({
@@ -45,8 +48,10 @@ export const CandidateHeader = ({
     location,
     progress,
     status,
+    cv,
     onCVUpload,
-    onStatusChange
+    onStatusChange,
+    onProgressChange
 }: CandidateHeaderProps) => (
     <div className="flex justify-between items-start">
         <div>
@@ -56,17 +61,22 @@ export const CandidateHeader = ({
                 Location: <span className="font-medium">{location}</span>
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-                Progress: <span className={cn(
-                    "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                    {
-                        "bg-green-50 text-green-700": progress === "Hired" || progress === "Offer Accepted",
-                        "bg-red-50 text-red-700": progress === "Rejected" || progress === "Offer Rejected",
-                        "bg-yellow-50 text-yellow-700": progress === "On Hold",
-                        "bg-blue-50 text-blue-700": progress === "Shortlisted",
-                        "bg-gray-50 text-gray-700": progress === "Pending",
-                        "bg-purple-50 text-purple-700": progress === "Offered",
-                    }
-                )}>{progress}</span>
+                Progress:
+                <Select value={progress} onValueChange={onProgressChange}>
+                    <SelectTrigger className="w-[180px] ml-2">
+                        <SelectValue>{progress}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Shortlisted">Shortlisted</SelectItem>
+                        <SelectItem value="On Hold">On Hold</SelectItem>
+                        <SelectItem value="Offered">Offered</SelectItem>
+                        <SelectItem value="Offer Accepted">Offer Accepted</SelectItem>
+                        <SelectItem value="Offer Rejected">Offer Rejected</SelectItem>
+                        <SelectItem value="Hired">Hired</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                </Select>
             </p>
             <p className="text-sm text-muted-foreground mt-1">
                 Status: <button
@@ -84,21 +94,40 @@ export const CandidateHeader = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
                 Upload CV in PDF or Word format
             </label>
-            <input
-                type="file"
-                onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        onCVUpload(file);
-                    }
-                }}
-                accept=".pdf, .doc, .docx"
-                className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700"
-            />
+            <div className="space-y-2">
+                <input
+                    type="file"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                            onCVUpload(file);
+                        }
+                    }}
+                    accept=".pdf, .doc, .docx"
+                    className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700"
+                />
+                {cv && (
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                            const url = URL.createObjectURL(cv);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = cv.name;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }}
+                    >
+                        Download CV
+                    </Button>
+                )}
+            </div>
             <div className="mt-8">
                 <KeyboardShortcuts />
             </div>
-
         </div>
     </div>
 );

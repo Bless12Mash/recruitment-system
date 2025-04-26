@@ -80,6 +80,12 @@ function App() {
     showToast(`Candidate status changed to ${updatedCandidate.status}`, 'info');
   };
 
+  const handleProgressChange = (updatedCandidate: Candidate) => {
+    setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c));
+    setSelectedCandidate(updatedCandidate);
+    showToast(`Progress updated to ${updatedCandidate.progress}`, 'info');
+  };
+
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape' && selectedCandidate) {
       setSelectedCandidate(null)
@@ -110,7 +116,23 @@ function App() {
             </div>
           </div>
           <div className="container mx-auto py-6">
-            {!selectedCandidate ? (
+            {selectedCandidate ? (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setSelectedCandidate(null)}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  ← Back to List
+                </button>
+                <CandidateDetails
+                  candidate={selectedCandidate}
+                  onUpdateStep={handleUpdateStep}
+                  onCVUpload={handleCVUpload}
+                  onStatusChange={handleStatusChange}
+                  onProgressChange={handleProgressChange}
+                />
+              </div>
+            ) : (
               <div className="space-y-6">
                 <div className="max-w-xl mx-auto">
                   <Input
@@ -127,21 +149,6 @@ function App() {
                 <CandidatesList
                   candidates={candidates}
                   onCandidateClick={handleCandidateClick}
-                />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <button
-                  onClick={() => setSelectedCandidate(null)}
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
-                  ← Back to List
-                </button>
-                <CandidateDetails
-                  candidate={selectedCandidate}
-                  onUpdateStep={handleUpdateStep}
-                  onCVUpload={handleCVUpload}
-                  onStatusChange={handleStatusChange}
                 />
               </div>
             )}
