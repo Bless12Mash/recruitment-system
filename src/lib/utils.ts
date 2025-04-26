@@ -58,7 +58,7 @@ export function formatDate(date: Date): string {
 export function updateCandidateStep(
   candidate: Candidate,
   stepId: number,
-  action: 'next' | 'reject' | 'update',
+  action: 'next' | 'reject' | 'update' | 'back' | 'unreject',
   feedback?: string
 ): Candidate {
   const updatedSteps = [...candidate.steps];
@@ -81,6 +81,22 @@ export function updateCandidateStep(
     candidate.status = 'Closed';
   } else if (action === 'update' && feedback) {
     currentStep.feedback = feedback;
+  } else if (action === 'back') {
+    if (stepId > 0) {
+      currentStep.feedback = undefined;
+      currentStep.status = 'pending';
+      currentStep.completedAt = undefined;
+
+      candidate.currentStep = stepId - 1;
+
+      const previousStep = updatedSteps[stepId - 1];
+      previousStep.status = 'pending';
+    }
+  } else if (action === 'unreject') {
+    currentStep.status = 'pending';
+    currentStep.completedAt = undefined;
+    candidate.status = 'Open';
+    candidate.currentStep = stepId;
   }
 
   return {

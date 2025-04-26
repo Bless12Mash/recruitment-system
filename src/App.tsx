@@ -44,7 +44,7 @@ function App() {
     setSelectedCandidate(candidate)
   }
 
-  const handleUpdateStep = (stepId: number, action: 'next' | 'reject' | 'update', feedback?: string) => {
+  const handleUpdateStep = (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject', feedback?: string) => {
     if (!selectedCandidate) return
 
     const updatedCandidate = updateCandidateStep(selectedCandidate, stepId, action, feedback)
@@ -52,9 +52,11 @@ function App() {
     setSelectedCandidate(updatedCandidate)
 
     const actionMessages = {
-      next: `${selectedCandidate} moved to next step`,
-      reject: `${selectedCandidate} has been rejected`,
-      update: `Feedback updated successfully for ${selectedCandidate}`
+      next: `${selectedCandidate.name} moved to next step`,
+      reject: `${selectedCandidate.name} has been rejected`,
+      update: `Feedback updated successfully for ${selectedCandidate.name}`,
+      unreject: `${selectedCandidate.name} has been unrejected`,
+      back: `Moved back to previous step`
     }
     showToast(actionMessages[action], action === 'reject' ? 'error' : 'success')
   }
@@ -71,6 +73,12 @@ function App() {
     setSelectedCandidate(updatedCandidate)
     showToast('CV uploaded successfully', 'success')
   }
+
+  const handleStatusChange = (updatedCandidate: Candidate) => {
+    setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c));
+    setSelectedCandidate(updatedCandidate);
+    showToast(`Candidate status changed to ${updatedCandidate.status}`, 'info');
+  };
 
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape' && selectedCandidate) {
@@ -98,7 +106,7 @@ function App() {
         <div>
           <div className="border-b">
             <div className="container mx-auto py-4">
-              <h1 className="text-2xl font-bold">Recruitment System</h1>
+              <h1 className="text-2xl font-bold mt-4">Recruitment System</h1>
             </div>
           </div>
           <div className="container mx-auto py-6">
@@ -133,6 +141,7 @@ function App() {
                   candidate={selectedCandidate}
                   onUpdateStep={handleUpdateStep}
                   onCVUpload={handleCVUpload}
+                  onStatusChange={handleStatusChange}
                 />
               </div>
             )}
