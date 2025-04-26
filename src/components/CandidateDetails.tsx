@@ -1,31 +1,38 @@
-import React, { KeyboardEvent, useEffect } from 'react';
-import { Candidate } from '../types/interview';
-import { cn } from '../lib/utils';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import React, { KeyboardEvent, useEffect } from 'react';
+import { cn } from '../lib/utils';
+import { Candidate } from '../types/interview';
 import {
-    getStepIcon,
-    KeyboardShortcuts,
     CandidateHeader,
+    getStepIcon,
     StepFeedback
 } from './CandidateDetails/utils';
 
 interface CandidateDetailsProps {
     candidate: Candidate;
-    onUpdateStep: (stepId: number, action: 'next' | 'reject' | 'update', feedback?: string) => void;
+    onUpdateStep: (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject', feedback?: string) => void;
     onCVUpload: (file: File) => void;
+    onStatusChange?: (candidate: Candidate) => void;
 }
 
-export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: CandidateDetailsProps) {
+export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatusChange }: CandidateDetailsProps) {
     const [feedback, setFeedback] = React.useState<string>('');
     const [activeStep, setActiveStep] = React.useState(candidate.currentStep);
     const [expandedStep, setExpandedStep] = React.useState<number | null>(candidate.currentStep);
     const [feedbackError, setFeedbackError] = React.useState<string>('');
+
+    useEffect(() => {
+        if (expandedStep !== null) {
+            setFeedback(candidate.steps[expandedStep]?.feedback || '');
+        }
+    }, [expandedStep, candidate.steps]);
 
     const handleToggleStep = (stepId: number) => {
         setExpandedStep(expandedStep === stepId ? null : stepId);
         if (candidate.steps[stepId].status === 'pending' || stepId === candidate.currentStep) {
             setActiveStep(stepId);
         }
+        setFeedback(candidate.steps[stepId]?.feedback || '');
         setFeedbackError('');
     };
 
@@ -42,16 +49,30 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
         }
     };
 
-    const validateFeedback = (): boolean => {
-        if (feedback.trim().length < 10) {
-            setFeedbackError('Feedback must be at least 10 characters long');
-            return false;
+    const handleStepUpdate = (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject') => {
+        if (action === 'back' && stepId > 0) {
+            setActiveStep(stepId - 1);
+            setExpandedStep(stepId - 1);
+            onUpdateStep(stepId, action);
+            return;
         }
-        return true;
-    };
 
-    const handleUpdateStep = (stepId: number, action: 'next' | 'reject' | 'update') => {
-        if (!validateFeedback()) return;
+        console.log(feedback)
+
+        if (action !== 'update' && action !== 'unreject' && !validateFeedback()) return;
+
+        if (action === 'back' && stepId > 0) {
+            setActiveStep(stepId - 1);
+            setExpandedStep(stepId - 1);
+            onUpdateStep(stepId, action);
+            return;
+        }
+
+        if (action === 'unreject') {
+            onUpdateStep(stepId, action);
+            setActiveStep(stepId);
+            return;
+        }
 
         onUpdateStep(stepId, action, feedback);
         setFeedback('');
@@ -63,15 +84,23 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
         }
     };
 
+    const validateFeedback = (): boolean => {
+        if (!feedback || feedback.trim() === '') {
+            setFeedbackError('Please provide feedback.');
+            return false;
+        }
+        return true;
+    };
+
     useEffect(() => {
         const handleKeyboardShortcuts = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLTextAreaElement) return;
 
             if (candidate.status === 'Open') {
                 if (e.key === 'n' && !e.metaKey && !e.ctrlKey) {
-                    handleUpdateStep(activeStep, 'next');
+                    handleStepUpdate(activeStep, 'next');
                 } else if (e.key === 'r' && !e.metaKey && !e.ctrlKey) {
-                    handleUpdateStep(activeStep, 'reject');
+                    handleStepUpdate(activeStep, 'reject');
                 }
             }
 
@@ -94,6 +123,17 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
         };
     }, [candidate.status, activeStep, expandedStep, candidate.steps.length]);
 
+    const handleStatusToggle = () => {
+        const newStatus = candidate.status === 'Open' ? 'Closed' : 'Open';
+        if (onStatusChange) {
+            onStatusChange({
+                ...candidate,
+                status: newStatus,
+                updatedAt: new Date()
+            });
+        }
+    };
+
     return (
         <div className="space-y-8 p-6">
             <CandidateHeader
@@ -104,9 +144,8 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
                 progress={candidate.progress}
                 status={candidate.status}
                 onCVUpload={onCVUpload}
+                onStatusChange={handleStatusToggle}
             />
-
-            <KeyboardShortcuts />
 
             <div className="space-y-4">
                 {candidate.steps.map((step, index) => (
@@ -157,11 +196,12 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
                                         stepStatus={step.status}
                                         currentStep={candidate.currentStep}
                                         stepIndex={index}
+                                        steps={candidate.steps}
                                         onFeedbackChange={(value) => {
                                             setFeedback(value);
                                             setFeedbackError('');
                                         }}
-                                        onUpdateStep={handleUpdateStep}
+                                        onUpdateStep={handleStepUpdate}
                                     />
                                 )}
                             </div>

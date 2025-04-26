@@ -16,9 +16,9 @@ export const getStepIcon = (status: InterviewStatus) => {
 };
 
 export const KeyboardShortcuts = () => (
-    <div className="text-sm text-muted-foreground mb-4">
-        <p>Keyboard shortcuts:</p>
+    <div className="text-sm text-muted-foreground mb-4 text-start">
         <ul className="mt-1 space-y-1">
+            <li><p className="mb-4">Keyboard shortcuts:</p></li>
             <li>Press <kbd className="px-2 py-1 bg-muted rounded">n</kbd> to move to next step</li>
             <li>Press <kbd className="px-2 py-1 bg-muted rounded">r</kbd> to reject candidate</li>
             <li>Press <kbd className="px-2 py-1 bg-muted rounded">Alt</kbd> + <kbd className="px-2 py-1 bg-muted rounded">↑</kbd>/<kbd className="px-2 py-1 bg-muted rounded">↓</kbd> to navigate steps</li>
@@ -35,6 +35,7 @@ interface CandidateHeaderProps {
     progress: string;
     status: string;
     onCVUpload: (file: File) => void;
+    onStatusChange: () => void;
 }
 
 export const CandidateHeader = ({
@@ -44,7 +45,8 @@ export const CandidateHeader = ({
     location,
     progress,
     status,
-    onCVUpload
+    onCVUpload,
+    onStatusChange
 }: CandidateHeaderProps) => (
     <div className="flex justify-between items-start">
         <div>
@@ -67,13 +69,21 @@ export const CandidateHeader = ({
                 )}>{progress}</span>
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-                Status: <span className={cn(
-                    "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                    status === 'Open' ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-700"
-                )}>{status}</span>
+                Status: <button
+                    onClick={onStatusChange}
+                    className={cn(
+                        "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium cursor-pointer transition-colors",
+                        status === 'Open' ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    )}
+                >
+                    {status}
+                </button>
             </p>
         </div>
         <div className="w-64">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload CV in PDF or Word format
+            </label>
             <input
                 type="file"
                 onChange={(e) => {
@@ -83,8 +93,12 @@ export const CandidateHeader = ({
                     }
                 }}
                 accept=".pdf, .doc, .docx"
-                className="w-full"
+                className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700"
             />
+            <div className="mt-8">
+                <KeyboardShortcuts />
+            </div>
+
         </div>
     </div>
 );
@@ -96,8 +110,9 @@ interface StepFeedbackProps {
     stepStatus: InterviewStatus;
     currentStep: number;
     stepIndex: number;
+    steps: { status: InterviewStatus }[];
     onFeedbackChange: (value: string) => void;
-    onUpdateStep: (index: number, action: 'next' | 'reject' | 'update') => void;
+    onUpdateStep: (index: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject') => void;
 }
 
 export const StepFeedback = ({
@@ -107,48 +122,91 @@ export const StepFeedback = ({
     stepStatus,
     currentStep,
     stepIndex,
+    steps,
     onFeedbackChange,
     onUpdateStep
-}: StepFeedbackProps) => (
-    <div className="space-y-4">
-        <div>
-            <Textarea
-                placeholder="Enter feedback for this step..."
-                value={feedback}
-                onChange={(e) => onFeedbackChange(e.target.value)}
-                className={cn(
-                    "min-h-[100px]",
-                    feedbackError && "border-red-500 focus-visible:ring-red-500"
+}: StepFeedbackProps) => {
+    const canMoveToNext = stepIndex === currentStep &&
+        (stepIndex === 0 || steps[stepIndex - 1]?.status === 'completed');
+
+    return (
+        <div className="space-y-4">
+            <div>
+                {!isActive && stepStatus !== 'pending' && (
+                    <div className="mb-4">
+                        <h4 className="text-sm font-medium mb-2">
+                            {stepStatus === 'completed' ? 'Completed with feedback:' : 'Rejected with feedback:'}
+                        </h4>
+                        <div className="text-sm bg-muted/50 p-4 rounded-md whitespace-pre-wrap">
+                            {feedback}
+                        </div>
+                    </div>
                 )}
-                disabled={stepStatus !== 'pending' && stepIndex !== currentStep}
-            />
-            {feedbackError && (
-                <p className="mt-1 text-sm text-red-500">{feedbackError}</p>
-            )}
-        </div>
-        {isActive && (
-            <div className="flex gap-2">
-                <Button
-                    variant="default"
-                    onClick={() => onUpdateStep(stepIndex, 'next')}
-                >
-                    Move to Next Step
-                </Button>
-                <Button
-                    variant="destructive"
-                    onClick={() => onUpdateStep(stepIndex, 'reject')}
-                >
-                    Reject Candidate
-                </Button>
+                <Textarea
+                    placeholder={isActive ? "Enter feedback for this step..." : "View feedback for this step"}
+                    value={feedback}
+                    onChange={(e) => onFeedbackChange(e.target.value)}
+                    className={cn(
+                        "min-h-[100px]",
+                        feedbackError && "border-red-500 focus-visible:ring-red-500",
+                        !isActive && stepStatus === 'pending' && "opacity-50"
+                    )}
+                    disabled={!isActive && stepIndex !== currentStep}
+                />
+                {feedbackError && (
+                    <p className="mt-1 text-sm text-red-500">{feedbackError}</p>
+                )}
             </div>
-        )}
-        {stepStatus !== 'pending' && stepIndex !== currentStep && (
-            <Button
-                variant="outline"
-                onClick={() => onUpdateStep(stepIndex, 'update')}
-            >
-                Update Feedback
-            </Button>
-        )}
-    </div>
-);
+            <div className="flex gap-2">
+                {isActive && (
+                    <>
+                        {canMoveToNext ? (
+                            <Button
+                                variant="default"
+                                onClick={() => onUpdateStep(stepIndex, 'next')}
+                            >
+                                Move to Next Step
+                            </Button>
+                        ) : stepIndex === currentStep && stepIndex > 0 && (
+                            <div className="text-sm text-yellow-600">
+                                Complete previous step before moving forward
+                            </div>
+                        )}
+                        <Button
+                            variant="destructive"
+                            onClick={() => onUpdateStep(stepIndex, 'reject')}
+                        >
+                            Reject Candidate
+                        </Button>
+                    </>
+                )}
+                {stepIndex === currentStep && stepIndex > 0 && steps[stepIndex - 1]?.status === 'completed' && (
+                    <Button
+                        variant="outline"
+                        onClick={() => onUpdateStep(stepIndex, 'back')}
+                    >
+                        Go Back
+                    </Button>
+                )}
+                {!isActive && stepStatus !== 'pending' && (
+                    <>
+                        <Button
+                            variant="outline"
+                            onClick={() => onUpdateStep(stepIndex, 'update')}
+                        >
+                            Update Feedback
+                        </Button>
+                        {stepStatus === 'rejected' && (
+                            <Button
+                                variant="default"
+                                onClick={() => onUpdateStep(stepIndex, 'unreject')}
+                            >
+                                Unreject Candidate
+                            </Button>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
