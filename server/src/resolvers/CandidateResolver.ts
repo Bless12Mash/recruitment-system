@@ -295,32 +295,12 @@ export class CandidateResolver {
 	@Mutation(() => Candidate)
 	async uploadCV(
 		@Arg("id", () => ID) id: string,
-		@Arg("file", () => GraphQLUpload)
-		{
-			createReadStream,
-			filename,
-		}: { createReadStream: () => NodeJS.ReadableStream; filename: string }
+		@Arg("cvLink") cvLink: string
 	): Promise<Candidate> {
-		console.log({ id }, { filename });
 		const candidate = await this.candidateRepository.findOneByOrFail({ id });
 
-		const uploadDir = join(process.cwd(), "uploads");
-		if (!existsSync(uploadDir)) {
-			mkdirSync(uploadDir, { recursive: true });
-		}
+		candidate.cvUrl = cvLink;
 
-		const uniqueFilename = `${Date.now()}-${filename}`;
-		const filePath = join(uploadDir, uniqueFilename);
-
-		await new Promise<void>((resolve, reject) => {
-			const writeStream = createWriteStream(filePath);
-			createReadStream()
-				.pipe(writeStream)
-				.on("finish", () => resolve())
-				.on("error", reject);
-		});
-
-		candidate.cvUrl = `/uploads/${uniqueFilename}`;
 		return await this.candidateRepository.save(candidate);
 	}
 }

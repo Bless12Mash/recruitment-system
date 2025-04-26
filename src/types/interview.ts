@@ -33,5 +33,5 @@ export interface Candidate {
 	createdAt?: Date;
 	updatedAt?: Date;
 	createdBy: string;
-	cv?: File;
+	cvUrl?: string;
 }

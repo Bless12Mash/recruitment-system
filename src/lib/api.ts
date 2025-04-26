@@ -328,11 +328,10 @@ export const candidateApi = {
 		return result.data.updateCandidateStatus;
 	},
 
-	async uploadCV(id: string, file: File): Promise<Candidate> {
-		const operations = {
-			query: `
-				mutation UploadCV($id: ID!, $file: Upload!) {
-					uploadCV(id: $id, file: $file) {
+	async uploadCV(id: string, cvLink: string): Promise<Candidate> {
+		const mutation = `
+				mutation UploadCV($id: ID!, $cvLink: String!) {
+					uploadCV(id: $id, cvLink: $cvLink) {
 						id
 						name
 						email
@@ -355,27 +354,20 @@ export const candidateApi = {
 						cvUrl
 					}
 				}
-			`,
-			variables: {
-				id,
-				file: null,
-			},
-		};
-
-		const map = {
-			"0": ["variables.file"],
-		};
-
-		const formData = new FormData();
-		formData.append("operations", JSON.stringify(operations));
-		formData.append("map", JSON.stringify(map));
-		formData.append("0", file);
-
-		console.log({ formData });
+			`;
 
 		const response = await fetch(API_BASE_URL, {
 			method: "POST",
-			body: formData,
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				query: mutation,
+				variables: {
+					id,
+					cvLink,
+				},
+			}),
 		});
 
 		const result = await response.json();

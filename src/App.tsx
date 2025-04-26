@@ -91,13 +91,13 @@ function App() {
     }
   };
 
-  const handleCVUpload = async (file: File) => {
+  const handleCVUpload = async (cvLink: string) => {
     console.log({ selectedCandidate })
     if (!selectedCandidate) return;
 
     try {
       if (selectedCandidate.id !== undefined) {
-        const updatedCandidate = await candidateApi.uploadCV(selectedCandidate.id, file);
+        const updatedCandidate = await candidateApi.uploadCV(selectedCandidate.id, cvLink);
         console.log({ updatedCandidate })
         setSelectedCandidate(updatedCandidate);
         showToast('CV uploaded successfully', 'success');
