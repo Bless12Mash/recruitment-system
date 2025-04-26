@@ -35,8 +35,8 @@ interface CandidateHeaderProps {
     location: string;
     progress: string;
     status: string;
-    cv?: File;
-    onCVUpload: (file: File) => void;
+    cvLink?: string;
+    onCVUpload: (cvLink: string) => void;
     onStatusChange: () => void;
     onProgressChange?: (progress: CandidateProgress) => void;
 }
@@ -48,7 +48,7 @@ export const CandidateHeader = ({
     location,
     progress,
     status,
-    cv,
+    cvLink,
     onCVUpload,
     onStatusChange,
     onProgressChange
@@ -92,44 +92,30 @@ export const CandidateHeader = ({
         </div>
         <div className="w-64">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload CV in PDF or Word format
+                Add CV link here
             </label>
             <div className="space-y-2">
                 <input
-                    type="file"
+                    type="text"
                     onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                            onCVUpload(file);
-                        }
+                        onCVUpload(e.target.value);
                     }}
-                    accept=".pdf, .doc, .docx"
                     className="w-full border border-gray-300 rounded-md p-2 text-sm text-gray-700"
                 />
-                {cv && (
-                    <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                            const url = URL.createObjectURL(cv);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = cv.name;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(url);
-                        }}
+                {cvLink && (
+                    <a
+                        href={cvLink}
+                        className="text-green-500"
                     >
-                        Download CV
-                    </Button>
+                        Candidate CV.... click this link
+                    </a>
                 )}
             </div>
             <div className="mt-8">
                 <KeyboardShortcuts />
             </div>
         </div>
-    </div>
+    </div >
 );
 
 interface StepFeedbackProps {

@@ -11,7 +11,7 @@ import {
 interface CandidateDetailsProps {
     candidate: Candidate;
     onUpdateStep: (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject', feedback?: string) => void;
-    onCVUpload: (file: File) => void;
+    onCVUpload: (cvLink: string) => void;
     onStatusChange?: (candidate: Candidate) => void;
     onProgressChange?: (candidate: Candidate) => void;
 }
@@ -146,7 +146,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
                 location={candidate.location}
                 progress={candidate.progress}
                 status={candidate.status}
-                cv={candidate.cv}
+                cvLink={candidate.cvUrl}
                 onCVUpload={onCVUpload}
                 onStatusChange={handleStatusToggle}
                 onProgressChange={handleProgressChange}
