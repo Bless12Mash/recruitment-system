@@ -109,6 +109,22 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
                     <h2 className="text-2xl font-bold">{candidate.name}</h2>
                     <p className="text-muted-foreground">{candidate.role} - {candidate.level}</p>
                     <p className="text-sm text-muted-foreground mt-1">
+                        Location: <span className="font-medium">{candidate.location}</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Progress: <span className={cn(
+                            "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+                            {
+                                "bg-green-50 text-green-700": candidate.progress === "Hired" || candidate.progress === "Offer Accepted",
+                                "bg-red-50 text-red-700": candidate.progress === "Rejected" || candidate.progress === "Offer Rejected",
+                                "bg-yellow-50 text-yellow-700": candidate.progress === "On Hold",
+                                "bg-blue-50 text-blue-700": candidate.progress === "Shortlisted",
+                                "bg-gray-50 text-gray-700": candidate.progress === "Pending",
+                                "bg-purple-50 text-purple-700": candidate.progress === "Offered",
+                            }
+                        )}>{candidate.progress}</span>
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
                         Status: <span className={cn(
                             "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
                             candidate.status === 'Open' ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-700"

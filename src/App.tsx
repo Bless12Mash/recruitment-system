@@ -52,9 +52,9 @@ function App() {
     setSelectedCandidate(updatedCandidate)
 
     const actionMessages = {
-      next: 'Candidate moved to next step',
-      reject: 'Candidate has been rejected',
-      update: 'Feedback updated successfully'
+      next: `${selectedCandidate} moved to next step`,
+      reject: `${selectedCandidate} has been rejected`,
+      update: `Feedback updated successfully for ${selectedCandidate}`
     }
     showToast(actionMessages[action], action === 'reject' ? 'error' : 'success')
   }
@@ -92,49 +92,54 @@ function App() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
         </div>
       )}
-      <header className="border-b">
-        <div className="container mx-auto py-4">
-          <h1 className="text-2xl font-bold">Recruitment System</h1>
-        </div>
-      </header>
 
-      <main className="container mx-auto py-6">
-        {!selectedCandidate ? (
-          <div className="space-y-6">
-            <div className="max-w-xl mx-auto">
-              <Input
-                type="file"
-                accept=".xlsx, .xls"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) {
-                    handleFileUpload(file)
-                  }
-                }}
-              />
+
+      {!isLoading && (
+        <div>
+          <div className="border-b">
+            <div className="container mx-auto py-4">
+              <h1 className="text-2xl font-bold">Recruitment System</h1>
             </div>
-            <CandidatesList
-              candidates={candidates}
-              onCandidateClick={handleCandidateClick}
-            />
           </div>
-        ) : (
-          <div className="space-y-4">
-            <button
-              onClick={() => setSelectedCandidate(null)}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              ← Back to List
-            </button>
-            <CandidateDetails
-              candidate={selectedCandidate}
-              onUpdateStep={handleUpdateStep}
-              onCVUpload={handleCVUpload}
-            />
+          <div className="container mx-auto py-6">
+            {!selectedCandidate ? (
+              <div className="space-y-6">
+                <div className="max-w-xl mx-auto">
+                  <Input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        handleFileUpload(file)
+                      }
+                    }}
+                  />
+                </div>
+                <CandidatesList
+                  candidates={candidates}
+                  onCandidateClick={handleCandidateClick}
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <button
+                  onClick={() => setSelectedCandidate(null)}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  ← Back to List
+                </button>
+                <CandidateDetails
+                  candidate={selectedCandidate}
+                  onUpdateStep={handleUpdateStep}
+                  onCVUpload={handleCVUpload}
+                />
+              </div>
+            )}
           </div>
-        )}
-      </main>
-      <Toaster />
+        </div>
+      )}
+      <Toaster closeButton />
     </div>
   )
 }
