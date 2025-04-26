@@ -26,7 +26,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         if (expandedStep !== null) {
             candidate.steps ? setFeedback(candidate.steps[expandedStep]?.feedback || '') : setFeedback('')
         }
-    }, [expandedStep, candidate.steps]);
+    }, [expandedStep, candidate.steps, candidate]);
 
     const handleToggleStep = (stepId: number) => {
         setExpandedStep(expandedStep === stepId ? null : stepId);
@@ -55,7 +55,6 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
             setActiveStep(stepId - 1);
             setExpandedStep(stepId - 1);
             setFeedback('');
-            console.log({ feedback })
             onUpdateStep(stepId, action, feedback);
             return;
         }

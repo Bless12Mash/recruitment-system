@@ -197,8 +197,6 @@ export const candidateApi = {
 
 		const result = await response.json();
 
-		console.log({ result });
-
 		if (result.errors) {
 			throw new Error(result.errors[0].message);
 		}
@@ -268,6 +266,68 @@ export const candidateApi = {
 		return result.data.updateCandidateProgress;
 	},
 
+	async updateCandidateStatus(
+		id: string,
+		status: string,
+		currentStep?: number,
+		stepData?: {
+			id: number;
+			status: string;
+			feedback?: string;
+			completedAt?: Date;
+		}
+	): Promise<Candidate> {
+		const mutation = `
+            mutation UpdateCandidateStatus($id: ID!, $status: String!, $currentStep: Int, $stepData: String) {
+                updateCandidateStatus(id: $id, status: $status, currentStep: $currentStep, stepData: $stepData) {
+                    id
+                    name
+                    email
+                    role
+                    level
+                    progress
+                    location
+                    status
+                    currentStep
+                    steps {
+                        id
+                        name
+                        status
+                        feedback
+                        completedAt
+                    }
+                    createdAt
+                    updatedAt
+                    createdBy
+                }
+            }
+        `;
+
+		const response = await fetch(API_BASE_URL, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				query: mutation,
+				variables: {
+					id,
+					status,
+					currentStep,
+					stepData: stepData ? JSON.stringify(stepData) : undefined,
+				},
+			}),
+		});
+
+		const result = await response.json();
+
+		if (result.errors) {
+			throw new Error(result.errors[0].message);
+		}
+
+		return result.data.updateCandidateStatus;
+	},
+
 	async uploadCV(id: string, file: File): Promise<Candidate> {
 		const operations = {
 			query: `
@@ -311,12 +371,16 @@ export const candidateApi = {
 		formData.append("map", JSON.stringify(map));
 		formData.append("0", file);
 
+		console.log({ formData });
+
 		const response = await fetch(API_BASE_URL, {
 			method: "POST",
 			body: formData,
 		});
 
 		const result = await response.json();
+
+		console.log({ result });
 
 		if (result.errors) {
 			throw new Error(result.errors[0].message);

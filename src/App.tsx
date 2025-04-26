@@ -30,7 +30,6 @@ function App() {
     setIsLoading(true)
     try {
       const newCandidates = await parseExcelData(file)
-      console.log({ newCandidates })
       const savedCandidates = await candidateApi.saveCandidates(newCandidates)
       showToast(`Successfully imported ${savedCandidates.length} candidates`, 'success')
     } catch (error) {
@@ -63,8 +62,6 @@ function App() {
       if (updatedCandidate.id !== undefined) {
         if (updatedCandidate.steps === undefined) return
         const stepData = updatedCandidate.steps[stepId];
-        console.log({ id: updatedCandidate.id })
-        console.log({ stepData })
         const savedCandidate = await candidateApi.updateCandidateProgress(
           updatedCandidate.id,
           updatedCandidate.progress,
@@ -95,11 +92,13 @@ function App() {
   };
 
   const handleCVUpload = async (file: File) => {
+    console.log({ selectedCandidate })
     if (!selectedCandidate) return;
 
     try {
       if (selectedCandidate.id !== undefined) {
         const updatedCandidate = await candidateApi.uploadCV(selectedCandidate.id, file);
+        console.log({ updatedCandidate })
         setSelectedCandidate(updatedCandidate);
         showToast('CV uploaded successfully', 'success');
       }
@@ -112,9 +111,9 @@ function App() {
   const handleStatusChange = async (updatedCandidate: Candidate) => {
     try {
       if (updatedCandidate.id !== undefined) {
-        const savedCandidate = await candidateApi.updateCandidateProgress(
+        const savedCandidate = await candidateApi.updateCandidateStatus(
           updatedCandidate.id,
-          updatedCandidate.progress
+          updatedCandidate.status
         );
         setSelectedCandidate(savedCandidate);
         showToast(`Candidate status changed to ${savedCandidate.status}`, 'info');
