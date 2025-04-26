@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { KeyboardEvent, useEffect } from 'react';
 import { cn } from '../lib/utils';
-import { Candidate } from '../types/interview';
+import { Candidate, CandidateProgress } from '../types/interview';
 import {
     CandidateHeader,
     getStepIcon,
@@ -13,9 +13,10 @@ interface CandidateDetailsProps {
     onUpdateStep: (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject', feedback?: string) => void;
     onCVUpload: (file: File) => void;
     onStatusChange?: (candidate: Candidate) => void;
+    onProgressChange?: (candidate: Candidate) => void;
 }
 
-export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatusChange }: CandidateDetailsProps) {
+export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatusChange, onProgressChange }: CandidateDetailsProps) {
     const [feedback, setFeedback] = React.useState<string>('');
     const [activeStep, setActiveStep] = React.useState(candidate.currentStep);
     const [expandedStep, setExpandedStep] = React.useState<number | null>(candidate.currentStep);
@@ -32,6 +33,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         if (candidate.steps[stepId].status === 'pending' || stepId === candidate.currentStep) {
             setActiveStep(stepId);
         }
+        console.log(candidate.steps[stepId]?.feedback)
         setFeedback(candidate.steps[stepId]?.feedback || '');
         setFeedbackError('');
     };
@@ -53,20 +55,12 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         if (action === 'back' && stepId > 0) {
             setActiveStep(stepId - 1);
             setExpandedStep(stepId - 1);
+            setFeedback('');
             onUpdateStep(stepId, action);
             return;
         }
-
-        console.log(feedback)
 
         if (action !== 'update' && action !== 'unreject' && !validateFeedback()) return;
-
-        if (action === 'back' && stepId > 0) {
-            setActiveStep(stepId - 1);
-            setExpandedStep(stepId - 1);
-            onUpdateStep(stepId, action);
-            return;
-        }
 
         if (action === 'unreject') {
             onUpdateStep(stepId, action);
@@ -134,6 +128,16 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         }
     };
 
+    const handleProgressChange = (newProgress: CandidateProgress) => {
+        if (onProgressChange) {
+            onProgressChange({
+                ...candidate,
+                progress: newProgress,
+                updatedAt: new Date()
+            });
+        }
+    };
+
     return (
         <div className="space-y-8 p-6">
             <CandidateHeader
@@ -143,8 +147,10 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
                 location={candidate.location}
                 progress={candidate.progress}
                 status={candidate.status}
+                cv={candidate.cv}
                 onCVUpload={onCVUpload}
                 onStatusChange={handleStatusToggle}
+                onProgressChange={handleProgressChange}
             />
 
             <div className="space-y-4">
@@ -191,7 +197,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
                                 {(index === activeStep && candidate.status === 'Open' || step.feedback) && (
                                     <StepFeedback
                                         isActive={index === activeStep && candidate.status === 'Open'}
-                                        feedback={step.feedback || feedback}
+                                        feedback={feedback}
                                         feedbackError={feedbackError}
                                         stepStatus={step.status}
                                         currentStep={candidate.currentStep}
