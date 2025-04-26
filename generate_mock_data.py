@@ -20,12 +20,10 @@ LEVELS = ["Junior", "Mid", "Senior", "Lead"]
 PROGRESS = ["Hired", "Rejected", "On Hold", "Shortlisted", "Pending", "Offered", "Offer Accepted", "Offer Rejected"]
 
 # Generate 500 candidates
-num_candidates = 500
+num_candidates = 10
 candidates = []
 
 for _ in range(num_candidates):
-    created_at = fake.date_time_between(start_date='-60d', end_date='+90d')
-    updated_at = fake.date_time_between(start_date=created_at, end_date='+90d')
 
     candidate = {
         'name': fake.name(),
@@ -35,8 +33,6 @@ for _ in range(num_candidates):
         'progress': np.random.choice(PROGRESS),
         'createdBy': fake.name(),
         'location': fake.city(),
-        'createdAt': created_at.strftime('%Y-%m-%d %H:%M:%S'),
-        'updatedAt': updated_at.strftime('%Y-%m-%d %H:%M:%S')
     }
     candidates.append(candidate)
 

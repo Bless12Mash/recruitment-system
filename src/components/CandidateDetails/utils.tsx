@@ -139,7 +139,7 @@ interface StepFeedbackProps {
     stepStatus: InterviewStatus;
     currentStep: number;
     stepIndex: number;
-    steps: { status: InterviewStatus }[];
+    steps: { status: InterviewStatus }[] | undefined;
     onFeedbackChange: (value: string) => void;
     onUpdateStep: (index: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject') => void;
 }
@@ -155,7 +155,7 @@ export const StepFeedback = ({
     onFeedbackChange,
     onUpdateStep
 }: StepFeedbackProps) => {
-    const canMoveToNext = stepIndex === currentStep &&
+    const canMoveToNext = stepIndex === currentStep && steps &&
         (stepIndex === 0 || steps[stepIndex - 1]?.status === 'completed');
 
     return (
@@ -209,7 +209,7 @@ export const StepFeedback = ({
                         </Button>
                     </>
                 )}
-                {stepIndex === currentStep && stepIndex > 0 && steps[stepIndex - 1]?.status === 'completed' && (
+                {stepIndex === currentStep && stepIndex > 0 && steps && steps[stepIndex - 1]?.status === 'completed' && (
                     <Button
                         variant="outline"
                         onClick={() => onUpdateStep(stepIndex, 'back')}

@@ -5,10 +5,10 @@ import { CandidateDetails } from './components/CandidateDetails'
 import { CandidatesList } from './components/CandidatesList'
 import { Input } from './components/ui/input'
 import { parseExcelData, updateCandidateStep } from './lib/utils'
+import { candidateApi } from './lib/api'
 import { Candidate } from './types/interview'
 
 function App() {
-  const [candidates, setCandidates] = useState<Candidate[]>([])
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -30,60 +30,115 @@ function App() {
     setIsLoading(true)
     try {
       const newCandidates = await parseExcelData(file)
-      setCandidates(prev => [...prev, ...newCandidates])
-      showToast(`Successfully imported ${newCandidates.length} candidates`, 'success')
+      console.log({ newCandidates })
+      const savedCandidates = await candidateApi.saveCandidates(newCandidates)
+      showToast(`Successfully imported ${savedCandidates.length} candidates`, 'success')
     } catch (error) {
-      console.error('Error parsing Excel file:', error)
+      console.error('Error importing candidates:', error)
       showToast('Error importing candidates. Please check the file format.', 'error')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCandidateClick = (candidate: Candidate) => {
-    setSelectedCandidate(candidate)
-  }
+  const handleCandidateClick = async (candidate: Candidate) => {
+    try {
+      if (candidate.id !== undefined) {
+        const fullCandidate = await candidateApi.candidate(candidate.id)
+        setSelectedCandidate(fullCandidate)
+      }
 
-  const handleUpdateStep = (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject', feedback?: string) => {
-    if (!selectedCandidate) return
-
-    const updatedCandidate = updateCandidateStep(selectedCandidate, stepId, action, feedback)
-    setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c))
-    setSelectedCandidate(updatedCandidate)
-
-    const actionMessages = {
-      next: `${selectedCandidate.name} moved to next step`,
-      reject: `${selectedCandidate.name} has been rejected`,
-      update: `Feedback updated successfully for ${selectedCandidate.name}`,
-      unreject: `${selectedCandidate.name} has been unrejected`,
-      back: `Moved back to previous step`
+    } catch (error) {
+      console.error('Error fetching candidate details:', error)
+      showToast('Error fetching candidate details. Please try again.', 'error')
     }
-    showToast(actionMessages[action], action === 'reject' ? 'error' : 'success')
   }
 
-  const handleCVUpload = (file: File) => {
-    if (!selectedCandidate) return
+  const handleUpdateStep = async (stepId: number, action: 'next' | 'reject' | 'update' | 'back' | 'unreject', feedback?: string) => {
+    if (!selectedCandidate) return;
 
-    const updatedCandidate = {
-      ...selectedCandidate,
-      cv: file,
-      updatedAt: new Date()
+    const updatedCandidate = updateCandidateStep(selectedCandidate, stepId, action, feedback);
+
+    try {
+      if (updatedCandidate.id !== undefined) {
+        if (updatedCandidate.steps === undefined) return
+        const stepData = updatedCandidate.steps[stepId];
+        console.log({ id: updatedCandidate.id })
+        console.log({ stepData })
+        const savedCandidate = await candidateApi.updateCandidateProgress(
+          updatedCandidate.id,
+          updatedCandidate.progress,
+          updatedCandidate.currentStep,
+          {
+            id: stepId,
+            status: stepData.status,
+            feedback: stepData.feedback,
+            completedAt: stepData.completedAt
+          }
+        );
+
+        setSelectedCandidate(savedCandidate);
+
+        const actionMessages = {
+          next: `${selectedCandidate.name} moved to next step`,
+          reject: `${selectedCandidate.name} has been rejected`,
+          update: `Feedback updated successfully for ${selectedCandidate.name}`,
+          unreject: `${selectedCandidate.name} has been unrejected`,
+          back: `Moved back to previous step`
+        };
+        showToast(actionMessages[action], action === 'reject' ? 'error' : 'success');
+      }
+    } catch (error) {
+      console.error('Error updating candidate:', error);
+      showToast('Error updating candidate. Please try again.', 'error');
     }
-    setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c))
-    setSelectedCandidate(updatedCandidate)
-    showToast('CV uploaded successfully', 'success')
-  }
-
-  const handleStatusChange = (updatedCandidate: Candidate) => {
-    setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c));
-    setSelectedCandidate(updatedCandidate);
-    showToast(`Candidate status changed to ${updatedCandidate.status}`, 'info');
   };
 
-  const handleProgressChange = (updatedCandidate: Candidate) => {
-    setCandidates(prev => prev.map(c => c.id === updatedCandidate.id ? updatedCandidate : c));
-    setSelectedCandidate(updatedCandidate);
-    showToast(`Progress updated to ${updatedCandidate.progress}`, 'info');
+  const handleCVUpload = async (file: File) => {
+    if (!selectedCandidate) return;
+
+    try {
+      if (selectedCandidate.id !== undefined) {
+        const updatedCandidate = await candidateApi.uploadCV(selectedCandidate.id, file);
+        setSelectedCandidate(updatedCandidate);
+        showToast('CV uploaded successfully', 'success');
+      }
+    } catch (error) {
+      console.error('Error uploading CV:', error);
+      showToast('Error uploading CV. Please try again.', 'error');
+    }
+  };
+
+  const handleStatusChange = async (updatedCandidate: Candidate) => {
+    try {
+      if (updatedCandidate.id !== undefined) {
+        const savedCandidate = await candidateApi.updateCandidateProgress(
+          updatedCandidate.id,
+          updatedCandidate.progress
+        );
+        setSelectedCandidate(savedCandidate);
+        showToast(`Candidate status changed to ${savedCandidate.status}`, 'info');
+      }
+    } catch (error) {
+      console.error('Error updating candidate status:', error);
+      showToast('Error updating candidate status. Please try again.', 'error');
+    }
+  };
+
+  const handleProgressChange = async (updatedCandidate: Candidate) => {
+    try {
+      if (updatedCandidate.id !== undefined) {
+        const savedCandidate = await candidateApi.updateCandidateProgress(
+          updatedCandidate.id,
+          updatedCandidate.progress
+        );
+        setSelectedCandidate(savedCandidate);
+        showToast(`Progress updated to ${savedCandidate.progress}`, 'info');
+      }
+    } catch (error) {
+      console.error('Error updating candidate progress:', error);
+      showToast('Error updating candidate progress. Please try again.', 'error');
+    }
   };
 
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
@@ -106,7 +161,6 @@ function App() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
         </div>
       )}
-
 
       {!isLoading && (
         <div>
@@ -147,7 +201,6 @@ function App() {
                   />
                 </div>
                 <CandidatesList
-                  candidates={candidates}
                   onCandidateClick={handleCandidateClick}
                 />
               </div>

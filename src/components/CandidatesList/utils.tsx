@@ -1,48 +1,256 @@
+import { Column, Table } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Table as TableInstance } from "@tanstack/react-table";
-import { Candidate } from "../../types/interview";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "../ui/select";
 
-export const statusOptions = [
-    { label: "Open", value: "Open" },
-    { label: "Closed", value: "Closed" },
+interface SortableColumnHeaderProps {
+    column: Column<any>;
+    children: React.ReactNode;
+}
+
+export function SortableColumnHeader({ column, children }: SortableColumnHeaderProps) {
+    return (
+        <Button
+            variant="ghost"
+            size="sm"
+            className="-ml-3 h-8 hover:bg-transparent"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+            {children}
+            {column.getIsSorted() === "asc" ? (
+                <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === "desc" ? (
+                <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+        </Button>
+    );
+}
+
+export const roleOptions = [
+    { value: "Frontend Developer", label: "Frontend Developer" },
+    { value: "Backend Developer", label: "Backend Developer" },
+    { value: "Full Stack Developer", label: "Full Stack Developer" },
+    { value: "DevOps Engineer", label: "DevOps Engineer" },
+    { value: "UI/UX Designer", label: "UI/UX Designer" },
+    { value: "Product Manager", label: "Product Manager" },
 ];
 
 export const levelOptions = [
-    { label: "Junior", value: "Junior" },
-    { label: "Mid", value: "Mid" },
-    { label: "Senior", value: "Senior" },
-    { label: "Lead", value: "Lead" },
-];
-
-export const roleOptions = [
-    { label: "Frontend Developer", value: "Frontend Developer" },
-    { label: "Backend Developer", value: "Backend Developer" },
-    { label: "Full Stack Developer", value: "Full Stack Developer" },
-    { label: "DevOps Engineer", value: "DevOps Engineer" },
-    { label: "UI/UX Designer", value: "UI/UX Designer" },
-    { label: "Product Manager", value: "Product Manager" },
+    { value: "Junior", label: "Junior" },
+    { value: "Mid", label: "Mid" },
+    { value: "Senior", label: "Senior" },
+    { value: "Lead", label: "Lead" },
 ];
 
 export const progressOptions = [
-    { label: "Hired", value: "Hired" },
-    { label: "Rejected", value: "Rejected" },
-    { label: "On Hold", value: "On Hold" },
-    { label: "Shortlisted", value: "Shortlisted" },
-    { label: "Pending", value: "Pending" },
-    { label: "Offered", value: "Offered" },
-    { label: "Offer Accepted", value: "Offer Accepted" },
-    { label: "Offer Rejected", value: "Offer Rejected" },
+    { value: "Pending", label: "Pending" },
+    { value: "Shortlisted", label: "Shortlisted" },
+    { value: "On Hold", label: "On Hold" },
+    { value: "Offered", label: "Offered" },
+    { value: "Offer Accepted", label: "Offer Accepted" },
+    { value: "Offer Rejected", label: "Offer Rejected" },
+    { value: "Hired", label: "Hired" },
+    { value: "Rejected", label: "Rejected" },
 ];
 
-export const getProgressStyle = (progress: string) => {
+export const statusOptions = [
+    { value: "Open", label: "Open" },
+    { value: "Closed", label: "Closed" },
+];
+
+interface FilterInputsProps {
+    table: Table<any>;
+}
+
+export function FilterInputs({ table }: FilterInputsProps) {
+    return (
+        <div className="flex gap-4 py-4">
+            <Input
+                placeholder="Filter by name..."
+                value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                    table.getColumn("name")?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm"
+            />
+            <Input
+                placeholder="Filter by location..."
+                value={(table.getColumn("location")?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                    table.getColumn("location")?.setFilterValue(event.target.value)
+                }
+                className="max-w-sm"
+            />
+            <Select
+                value={(table.getColumn("role")?.getFilterValue() as string) ?? ""}
+                onValueChange={(value) =>
+                    table.getColumn("role")?.setFilterValue(value)
+                }
+            >
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by role" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    {roleOptions.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select
+                value={(table.getColumn("level")?.getFilterValue() as string) ?? ""}
+                onValueChange={(value) =>
+                    table.getColumn("level")?.setFilterValue(value)
+                }
+            >
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by level" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    {levelOptions.map((level) => (
+                        <SelectItem key={level.value} value={level.value}>
+                            {level.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select
+                value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
+                onValueChange={(value) =>
+                    table.getColumn("status")?.setFilterValue(value)
+                }
+            >
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {statusOptions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                            {status.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select
+                value={(table.getColumn("progress")?.getFilterValue() as string) ?? ""}
+                onValueChange={(value) =>
+                    table.getColumn("progress")?.setFilterValue(value)
+                }
+            >
+                <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by progress" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Progress</SelectItem>
+                    {progressOptions.map((progress) => (
+                        <SelectItem key={progress.value} value={progress.value}>
+                            {progress.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
+    );
+}
+
+interface PaginationControlsProps {
+    table: Table<any>;
+    totalItems: number;
+    isLoading?: boolean;
+}
+
+export function PaginationControls({ table, totalItems, isLoading }: PaginationControlsProps) {
+    return (
+        <div className="flex items-center justify-between px-2 py-4">
+            <div className="flex-1 text-sm text-muted-foreground">
+                {totalItems.toLocaleString()} candidates total.
+            </div>
+            <div className="flex items-center space-x-6 lg:space-x-8">
+                <div className="flex items-center space-x-2">
+                    <p className="text-sm font-medium">Rows per page</p>
+                    <Select
+                        value={`${table.getState().pagination.pageSize}`}
+                        onValueChange={(value) => {
+                            table.setPageSize(Number(value));
+                        }}
+                    >
+                        <SelectTrigger className="h-8 w-[70px]">
+                            <SelectValue placeholder={table.getState().pagination.pageSize} />
+                        </SelectTrigger>
+                        <SelectContent side="top">
+                            {[10, 20, 30, 40, 50].map((pageSize) => (
+                                <SelectItem key={pageSize} value={`${pageSize}`}>
+                                    {pageSize}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                    Page {table.getState().pagination.pageIndex + 1} of{" "}
+                    {table.getPageCount()}
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Button
+                        variant="outline"
+                        className="hidden h-8 w-8 p-0 lg:flex"
+                        onClick={() => table.setPageIndex(0)}
+                        disabled={!table.getCanPreviousPage() || isLoading}
+                    >
+                        <span className="sr-only">Go to first page</span>
+                        <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage() || isLoading}
+                    >
+                        <span className="sr-only">Go to previous page</span>
+                        <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="h-8 w-8 p-0"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage() || isLoading}
+                    >
+                        <span className="sr-only">Go to next page</span>
+                        <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                        variant="outline"
+                        className="hidden h-8 w-8 p-0 lg:flex"
+                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                        disabled={!table.getCanNextPage() || isLoading}
+                    >
+                        <span className="sr-only">Go to last page</span>
+                        <ArrowUpDown className="h-4 w-4 rotate-90" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export function getProgressStyle(progress: string) {
     switch (progress) {
         case "Hired":
-        case "Offer Accepted":
             return "bg-green-100 text-green-800 ring-green-600/20";
         case "Rejected":
-        case "Offer Rejected":
             return "bg-red-100 text-red-800 ring-red-600/20";
         case "On Hold":
             return "bg-yellow-100 text-yellow-800 ring-yellow-600/20";
@@ -52,129 +260,11 @@ export const getProgressStyle = (progress: string) => {
             return "bg-gray-100 text-gray-800 ring-gray-600/20";
         case "Offered":
             return "bg-purple-100 text-purple-800 ring-purple-600/20";
+        case "Offer Accepted":
+            return "bg-emerald-100 text-emerald-800 ring-emerald-600/20";
+        case "Offer Rejected":
+            return "bg-rose-100 text-rose-800 ring-rose-600/20";
         default:
             return "bg-gray-100 text-gray-800 ring-gray-600/20";
     }
-};
-
-export const SortableColumnHeader = ({ column, children }: { column: any, children: React.ReactNode }) => {
-    return (
-        <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-            {children}
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-    );
-};
-
-interface FilterInputsProps {
-    table: TableInstance<Candidate>
 }
-
-export const FilterInputs = ({ table }: FilterInputsProps) => {
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <Input
-                    placeholder="Filter by name..."
-                    value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-                    onChange={(event) =>
-                        table.getColumn("name")?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
-                />
-                <Input
-                    placeholder="Filter by location..."
-                    value={(table.getColumn("location")?.getFilterValue() as string) ?? ""}
-                    onChange={(event) =>
-                        table.getColumn("location")?.setFilterValue(event.target.value)
-                    }
-                    className="max-w-sm"
-                />
-            </div>
-            <FilterDropdowns table={table} />
-        </div>
-    );
-};
-
-const FilterDropdowns = ({ table }: FilterInputsProps) => {
-    return (
-        <div className="flex items-center gap-4">
-            <FilterSelect
-                value={(table.getColumn("role")?.getFilterValue() as string) ?? ""}
-                onChange={(value) => table.getColumn("role")?.setFilterValue(value)}
-                options={roleOptions}
-                placeholder="All Roles"
-            />
-            <FilterSelect
-                value={(table.getColumn("level")?.getFilterValue() as string) ?? ""}
-                onChange={(value) => table.getColumn("level")?.setFilterValue(value)}
-                options={levelOptions}
-                placeholder="All Levels"
-            />
-            <FilterSelect
-                value={(table.getColumn("progress")?.getFilterValue() as string) ?? ""}
-                onChange={(value) => table.getColumn("progress")?.setFilterValue(value)}
-                options={progressOptions}
-                placeholder="All Progress"
-            />
-            <FilterSelect
-                value={(table.getColumn("status")?.getFilterValue() as string) ?? ""}
-                onChange={(value) => table.getColumn("status")?.setFilterValue(value)}
-                options={statusOptions}
-                placeholder="All Status"
-            />
-        </div>
-    );
-};
-
-interface FilterSelectProps {
-    value: string;
-    onChange: (value: string) => void;
-    options: { label: string; value: string; }[];
-    placeholder: string;
-}
-
-const FilterSelect = ({ value, onChange, options, placeholder }: FilterSelectProps) => {
-    return (
-        <select
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            className="h-9 rounded-md border border-input px-3"
-        >
-            <option value="">{placeholder}</option>
-            {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                    {option.label}
-                </option>
-            ))}
-        </select>
-    );
-};
-
-export const PaginationControls = ({ table }: FilterInputsProps) => {
-    return (
-        <div className="flex items-center justify-end space-x-2 py-4">
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-            >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-            </Button>
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-            >
-                Next
-                <ChevronRight className="h-4 w-4" />
-            </Button>
-        </div>
-    );
-};

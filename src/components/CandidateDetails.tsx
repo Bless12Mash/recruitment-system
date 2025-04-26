@@ -24,17 +24,16 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
 
     useEffect(() => {
         if (expandedStep !== null) {
-            setFeedback(candidate.steps[expandedStep]?.feedback || '');
+            candidate.steps ? setFeedback(candidate.steps[expandedStep]?.feedback || '') : setFeedback('')
         }
     }, [expandedStep, candidate.steps]);
 
     const handleToggleStep = (stepId: number) => {
         setExpandedStep(expandedStep === stepId ? null : stepId);
-        if (candidate.steps[stepId].status === 'pending' || stepId === candidate.currentStep) {
+        if (candidate.steps && candidate.steps[stepId].status === 'pending' || stepId === candidate.currentStep) {
             setActiveStep(stepId);
         }
-        console.log(candidate.steps[stepId]?.feedback)
-        setFeedback(candidate.steps[stepId]?.feedback || '');
+        candidate.steps ? setFeedback(candidate.steps[stepId]?.feedback || '') : setFeedback('')
         setFeedbackError('');
     };
 
@@ -42,7 +41,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             handleToggleStep(stepId);
-        } else if (e.key === 'ArrowDown' && stepId < candidate.steps.length - 1) {
+        } else if (e.key === 'ArrowDown' && candidate.steps && stepId < candidate.steps.length - 1) {
             e.preventDefault();
             handleToggleStep(stepId + 1);
         } else if (e.key === 'ArrowUp' && stepId > 0) {
@@ -56,7 +55,8 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
             setActiveStep(stepId - 1);
             setExpandedStep(stepId - 1);
             setFeedback('');
-            onUpdateStep(stepId, action);
+            console.log({ feedback })
+            onUpdateStep(stepId, action, feedback);
             return;
         }
 
@@ -72,7 +72,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         setFeedback('');
         setFeedbackError('');
 
-        if (action === 'next' && stepId < candidate.steps.length - 1) {
+        if (action === 'next' && candidate.steps && stepId < candidate.steps.length - 1) {
             setExpandedStep(stepId + 1);
             setActiveStep(stepId + 1);
         }
@@ -100,7 +100,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
 
             if (e.key === 'ArrowDown' && e.altKey) {
                 e.preventDefault();
-                if (expandedStep !== null && expandedStep < candidate.steps.length - 1) {
+                if (expandedStep !== null && candidate.steps && expandedStep < candidate.steps.length - 1) {
                     handleToggleStep(expandedStep + 1);
                 }
             } else if (e.key === 'ArrowUp' && e.altKey) {
@@ -115,7 +115,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         return () => {
             document.removeEventListener('keydown', handleKeyboardShortcuts as any);
         };
-    }, [candidate.status, activeStep, expandedStep, candidate.steps.length]);
+    }, [candidate.status, activeStep, expandedStep, candidate.steps?.length]);
 
     const handleStatusToggle = () => {
         const newStatus = candidate.status === 'Open' ? 'Closed' : 'Open';
@@ -154,7 +154,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
             />
 
             <div className="space-y-4">
-                {candidate.steps.map((step, index) => (
+                {candidate.steps?.map((step, index) => (
                     <div
                         key={step.id}
                         className={cn(
