@@ -249,9 +249,33 @@ export class CandidateResolver {
 	): Promise<Candidate> {
 		const candidate = await this.candidateRepository.findOneByOrFail({ id });
 
-		console.log({ candidate }, { id }, { progress });
-
 		candidate.progress = progress;
+		if (currentStep !== undefined) {
+			candidate.currentStep = currentStep;
+		}
+		if (stepData) {
+			const steps = [...candidate.steps];
+			const stepUpdate = JSON.parse(stepData);
+			const stepIndex = steps.findIndex((s) => s.id === stepUpdate.id);
+			if (stepIndex >= 0) {
+				steps[stepIndex] = { ...steps[stepIndex], ...stepUpdate };
+			}
+			candidate.steps = steps;
+		}
+
+		return await this.candidateRepository.save(candidate);
+	}
+
+	@Mutation(() => Candidate)
+	async updateCandidateStatus(
+		@Arg("id", () => ID) id: string,
+		@Arg("status") status: string,
+		@Arg("currentStep", () => Int, { nullable: true }) currentStep?: number,
+		@Arg("stepData", { nullable: true }) stepData?: string
+	): Promise<Candidate> {
+		const candidate = await this.candidateRepository.findOneByOrFail({ id });
+
+		candidate.status = status;
 		if (currentStep !== undefined) {
 			candidate.currentStep = currentStep;
 		}
@@ -277,6 +301,7 @@ export class CandidateResolver {
 			filename,
 		}: { createReadStream: () => NodeJS.ReadableStream; filename: string }
 	): Promise<Candidate> {
+		console.log({ id }, { filename });
 		const candidate = await this.candidateRepository.findOneByOrFail({ id });
 
 		const uploadDir = join(process.cwd(), "uploads");
