@@ -1,10 +1,13 @@
-import React, { KeyboardEvent, ChangeEvent, useEffect } from 'react';
-import { Candidate, InterviewStatus } from '../types/interview';
-import { Button } from './ui/button';
-import { Textarea } from '../components/ui/textarea';
+import React, { KeyboardEvent, useEffect } from 'react';
+import { Candidate } from '../types/interview';
 import { cn } from '../lib/utils';
-import { CheckCircle2, XCircle, Circle, ChevronDown, ChevronUp } from 'lucide-react';
-import { Input } from './ui/input';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import {
+    getStepIcon,
+    KeyboardShortcuts,
+    CandidateHeader,
+    StepFeedback
+} from './CandidateDetails/utils';
 
 interface CandidateDetailsProps {
     candidate: Candidate;
@@ -17,17 +20,6 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
     const [activeStep, setActiveStep] = React.useState(candidate.currentStep);
     const [expandedStep, setExpandedStep] = React.useState<number | null>(candidate.currentStep);
     const [feedbackError, setFeedbackError] = React.useState<string>('');
-
-    const getStepIcon = (status: InterviewStatus) => {
-        switch (status) {
-            case 'completed':
-                return <CheckCircle2 className="h-6 w-6 text-green-500" />;
-            case 'rejected':
-                return <XCircle className="h-6 w-6 text-red-500" />;
-            default:
-                return <Circle className="h-6 w-6 text-gray-300" />;
-        }
-    };
 
     const handleToggleStep = (stepId: number) => {
         setExpandedStep(expandedStep === stepId ? null : stepId);
@@ -104,56 +96,17 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
 
     return (
         <div className="space-y-8 p-6">
-            <div className="flex justify-between items-start">
-                <div>
-                    <h2 className="text-2xl font-bold">{candidate.name}</h2>
-                    <p className="text-muted-foreground">{candidate.role} - {candidate.level}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Location: <span className="font-medium">{candidate.location}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Progress: <span className={cn(
-                            "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                            {
-                                "bg-green-50 text-green-700": candidate.progress === "Hired" || candidate.progress === "Offer Accepted",
-                                "bg-red-50 text-red-700": candidate.progress === "Rejected" || candidate.progress === "Offer Rejected",
-                                "bg-yellow-50 text-yellow-700": candidate.progress === "On Hold",
-                                "bg-blue-50 text-blue-700": candidate.progress === "Shortlisted",
-                                "bg-gray-50 text-gray-700": candidate.progress === "Pending",
-                                "bg-purple-50 text-purple-700": candidate.progress === "Offered",
-                            }
-                        )}>{candidate.progress}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Status: <span className={cn(
-                            "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                            candidate.status === 'Open' ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-700"
-                        )}>{candidate.status}</span>
-                    </p>
-                </div>
-                <div className="w-64">
-                    <Input
-                        type="file"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                                onCVUpload(file);
-                            }
-                        }}
-                        accept=".pdf, .doc, .docx"
-                    />
-                </div>
-            </div>
+            <CandidateHeader
+                name={candidate.name}
+                role={candidate.role}
+                level={candidate.level}
+                location={candidate.location}
+                progress={candidate.progress}
+                status={candidate.status}
+                onCVUpload={onCVUpload}
+            />
 
-            <div className="text-sm text-muted-foreground mb-4">
-                <p>Keyboard shortcuts:</p>
-                <ul className="mt-1 space-y-1">
-                    <li>Press <kbd className="px-2 py-1 bg-muted rounded">n</kbd> to move to next step</li>
-                    <li>Press <kbd className="px-2 py-1 bg-muted rounded">r</kbd> to reject candidate</li>
-                    <li>Press <kbd className="px-2 py-1 bg-muted rounded">Alt</kbd> + <kbd className="px-2 py-1 bg-muted rounded">↑</kbd>/<kbd className="px-2 py-1 bg-muted rounded">↓</kbd> to navigate steps</li>
-                    <li>Press <kbd className="px-2 py-1 bg-muted rounded">Esc</kbd> to return to list view</li>
-                </ul>
-            </div>
+            <KeyboardShortcuts />
 
             <div className="space-y-4">
                 {candidate.steps.map((step, index) => (
@@ -197,50 +150,19 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload }: Candid
                         {expandedStep === index && (
                             <div className="p-4 border-t bg-background">
                                 {(index === activeStep && candidate.status === 'Open' || step.feedback) && (
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Textarea
-                                                placeholder="Enter feedback for this step..."
-                                                value={step.feedback || feedback}
-                                                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-                                                    setFeedback(e.target.value);
-                                                    setFeedbackError('');
-                                                }}
-                                                className={cn(
-                                                    "min-h-[100px]",
-                                                    feedbackError && "border-red-500 focus-visible:ring-red-500"
-                                                )}
-                                                disabled={step.status !== 'pending' && index !== activeStep}
-                                            />
-                                            {feedbackError && (
-                                                <p className="mt-1 text-sm text-red-500">{feedbackError}</p>
-                                            )}
-                                        </div>
-                                        {index === activeStep && candidate.status === 'Open' && (
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    variant="default"
-                                                    onClick={() => handleUpdateStep(index, 'next')}
-                                                >
-                                                    Move to Next Step
-                                                </Button>
-                                                <Button
-                                                    variant="destructive"
-                                                    onClick={() => handleUpdateStep(index, 'reject')}
-                                                >
-                                                    Reject Candidate
-                                                </Button>
-                                            </div>
-                                        )}
-                                        {step.status !== 'pending' && index !== activeStep && (
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => handleUpdateStep(index, 'update')}
-                                            >
-                                                Update Feedback
-                                            </Button>
-                                        )}
-                                    </div>
+                                    <StepFeedback
+                                        isActive={index === activeStep && candidate.status === 'Open'}
+                                        feedback={step.feedback || feedback}
+                                        feedbackError={feedbackError}
+                                        stepStatus={step.status}
+                                        currentStep={candidate.currentStep}
+                                        stepIndex={index}
+                                        onFeedbackChange={(value) => {
+                                            setFeedback(value);
+                                            setFeedbackError('');
+                                        }}
+                                        onUpdateStep={handleUpdateStep}
+                                    />
                                 )}
                             </div>
                         )}
