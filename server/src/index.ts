@@ -1,14 +1,11 @@
-import "reflect-metadata";
-import express from "express";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
-import { buildSchema } from "type-graphql";
-import { CandidateResolver } from "./resolvers/CandidateResolver";
-import { AppDataSource } from "./config/database";
 import cors from "cors";
-import { graphqlUploadExpress } from "graphql-upload-minimal";
-import { existsSync, mkdirSync } from "fs";
-import path from "path";
+import express from "express";
+import "reflect-metadata";
+import { buildSchema } from "type-graphql";
+import { AppDataSource } from "./config/database";
+import { CandidateResolver } from "./resolvers/CandidateResolver";
 
 async function main() {
 	await AppDataSource.initialize();
@@ -16,19 +13,10 @@ async function main() {
 
 	const app = express();
 
-	const uploadDir = path.join(process.cwd(), "uploads");
-	if (!existsSync(uploadDir)) {
-		mkdirSync(uploadDir, { recursive: true });
-	}
-
-	app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
 	app.use(cors());
 	var bodyParser = require("body-parser");
 	app.use(bodyParser.json({ limit: "50mb" }));
 	app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-
-	app.use(graphqlUploadExpress());
 
 	const schema = await buildSchema({
 		resolvers: [CandidateResolver],
@@ -43,7 +31,7 @@ async function main() {
 	app.use(
 		"/api",
 		expressMiddleware(server, {
-			context: async ({ req }) => ({ req }),
+			context: async ({ req }) => ({ req, token: req.headers.token }),
 		})
 	);
 

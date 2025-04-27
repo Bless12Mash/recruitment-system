@@ -1,6 +1,15 @@
-import { Candidate } from "../types/interview";
+import { Candidate, CandidateLevel } from "../types/interview";
 
 const API_BASE_URL = "http://localhost:3000/api";
+
+interface AddCandidate {
+	id?: string;
+	name: string;
+	email: string;
+	role: string;
+	level: CandidateLevel;
+	location: string;
+}
 
 export const candidateApi = {
 	async getAllCandidates(): Promise<Candidate[]> {
@@ -95,7 +104,7 @@ export const candidateApi = {
 		return result.data.candidate;
 	},
 
-	async saveCandidate(candidate: Candidate): Promise<Candidate> {
+	async saveCandidate(candidate: AddCandidate): Promise<Candidate> {
 		const mutation = `
             mutation SaveCandidate($candidate: CandidateInput!) {
                 saveCandidate(candidate: $candidate) {
@@ -126,6 +135,7 @@ export const candidateApi = {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"token": "me",
 			},
 			body: JSON.stringify({
 				query: mutation,
@@ -135,12 +145,7 @@ export const candidateApi = {
 						email: candidate.email,
 						role: candidate.role,
 						level: candidate.level,
-						progress: candidate.progress,
 						location: candidate.location,
-						status: candidate.status,
-						currentStep: candidate.currentStep,
-						steps: candidate.steps,
-						createdBy: candidate.createdBy,
 					},
 				},
 			}),
@@ -186,6 +191,7 @@ export const candidateApi = {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				"token": "me",
 			},
 			body: JSON.stringify({
 				query: mutation,
@@ -372,8 +378,6 @@ export const candidateApi = {
 
 		const result = await response.json();
 
-		console.log({ result });
-
 		if (result.errors) {
 			throw new Error(result.errors[0].message);
 		}
@@ -430,6 +434,7 @@ export const fetchPaginatedCandidates = async (
           cvUrl
           createdAt
           updatedAt
+		  createdBy
         }
         total
         page
