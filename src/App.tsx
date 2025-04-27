@@ -7,24 +7,27 @@ import { Input } from './components/ui/input'
 import { parseExcelData, updateCandidateStep } from './lib/utils'
 import { candidateApi } from './lib/api'
 import { Candidate } from './types/interview'
+import { Button } from './components/ui/button'
+import { AddCandidate } from './components/AddCandidate'
+
+export const showToast = ((message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  const description = new Date().toLocaleDateString()
+  switch (type) {
+    case 'success':
+      toast.success(message, { description })
+      break
+    case 'error':
+      toast.error(message, { description })
+      break
+    default:
+      toast.info(message, { description })
+  }
+})
 
 function App() {
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-
-  const showToast = ((message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const description = new Date().toLocaleDateString()
-    switch (type) {
-      case 'success':
-        toast.success(message, { description })
-        break
-      case 'error':
-        toast.error(message, { description })
-        break
-      default:
-        toast.info(message, { description })
-    }
-  })
+  const [newCandidate, setNewCandidate] = useState(false)
 
   const handleFileUpload = async (file: File) => {
     setIsLoading(true)
@@ -92,13 +95,11 @@ function App() {
   };
 
   const handleCVUpload = async (cvLink: string) => {
-    console.log({ selectedCandidate })
     if (!selectedCandidate) return;
 
     try {
       if (selectedCandidate.id !== undefined) {
         const updatedCandidate = await candidateApi.uploadCV(selectedCandidate.id, cvLink);
-        console.log({ updatedCandidate })
         setSelectedCandidate(updatedCandidate);
         showToast('CV uploaded successfully', 'success');
       }
@@ -153,6 +154,10 @@ function App() {
     }
   }, [handleKeyPress])
 
+  const addCandidate = () => {
+    setNewCandidate(true)
+  }
+
   return (
     <div className="min-h-screen bg-background relative">
       {isLoading && (
@@ -185,9 +190,19 @@ function App() {
                   onProgressChange={handleProgressChange}
                 />
               </div>
-            ) : (
+            ) : newCandidate ? (
+              <div>
+                <button
+                  onClick={() => setNewCandidate(false)}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  ← Back to List
+                </button>
+                <AddCandidate />
+              </div>) : (
               <div className="space-y-6">
                 <div className="max-w-xl mx-auto">
+                  <p className="text-start text-sm text-muted-foreground">Bulk candidate upload with excel sheet</p>
                   <Input
                     type="file"
                     accept=".xlsx, .xls"
@@ -199,6 +214,7 @@ function App() {
                     }}
                   />
                 </div>
+                <Button onClick={addCandidate}>Add Candidate</Button>
                 <CandidatesList
                   onCandidateClick={handleCandidateClick}
                 />

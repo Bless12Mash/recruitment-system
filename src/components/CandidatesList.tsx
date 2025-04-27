@@ -50,6 +50,7 @@ export function CandidatesList({ onCandidateClick }: CandidatesListProps) {
                     filters[filter.id] = filter.value as string
                 })
 
+
                 const result = await fetchPaginatedCandidates(
                     { page: pageIndex + 1, pageSize },
                     sortField ? { field: sortField, order: sortOrder } : undefined,
@@ -184,7 +185,7 @@ export function CandidatesList({ onCandidateClick }: CandidatesListProps) {
     })
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto">
             <FilterInputs table={table} />
             <div className="rounded-md border mt-4 relative">
                 {isLoading && (

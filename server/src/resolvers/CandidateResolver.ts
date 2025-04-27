@@ -1,19 +1,19 @@
 import {
-	Resolver,
-	Query,
-	Mutation,
 	Arg,
+	Field,
 	ID,
 	InputType,
-	Field,
-	ObjectType,
 	Int,
+	Mutation,
+	ObjectType,
+	Query,
+	Resolver,
+	Authorized,
+	Ctx,
 } from "type-graphql";
-import { Candidate } from "../entities/Candidate";
 import { AppDataSource } from "../config/database";
-import { existsSync, mkdirSync, createWriteStream } from "fs";
-import { join } from "path";
-import { GraphQLUpload } from "graphql-upload-minimal";
+import { Candidate } from "../entities/Candidate";
+import { MyContext } from "../types/MyContext";
 
 @InputType()
 class PaginationInput {
@@ -52,6 +52,9 @@ class CandidateFilterInput {
 
 	@Field({ nullable: true })
 	location?: string;
+
+	@Field({ nullable: true })
+	progress?: string;
 }
 
 @ObjectType()
@@ -105,23 +108,23 @@ class CandidateInput {
 	@Field()
 	level: string;
 
-	@Field()
-	progress: string;
+	@Field({ nullable: true })
+	progress?: string;
 
 	@Field()
 	location: string;
 
-	@Field()
-	status: string;
+	@Field({ nullable: true })
+	status?: string;
 
 	@Field(() => Int, { nullable: true })
-	currentStep: number;
+	currentStep?: number;
 
 	@Field(() => [InterviewStep], { nullable: true })
 	steps?: InterviewStep[];
 
-	@Field()
-	createdBy: string;
+	@Field({ nullable: true })
+	createdBy?: string;
 
 	@Field({ nullable: true })
 	cvUrl?: string;
@@ -179,6 +182,11 @@ export class CandidateResolver {
 					location: `%${filter.location}%`,
 				});
 			}
+			if (filter.progress && filter.progress !== "all") {
+				queryBuilder.andWhere("candidate.progress ILIKE :progress", {
+					progress: `%${filter.progress}%`,
+				});
+			}
 		}
 
 		const sortField = sort?.field || "createdAt";
@@ -213,7 +221,8 @@ export class CandidateResolver {
 
 	@Mutation(() => Candidate)
 	async saveCandidate(
-		@Arg("candidate") candidateInput: CandidateInput
+		@Arg("candidate") candidateInput: CandidateInput,
+		@Ctx() ctx: MyContext
 	): Promise<Candidate> {
 		candidateInput.steps = [
 			{ id: 0, name: this.INTERVIEW_STEPS[0], status: "Pending" },
@@ -223,6 +232,9 @@ export class CandidateResolver {
 		];
 
 		candidateInput.currentStep = 0;
+		candidateInput.status = "Open";
+		candidateInput.createdBy = ctx.token;
+		candidateInput.progress = "Pending";
 
 		const candidate = this.candidateRepository.create(candidateInput);
 		return await this.candidateRepository.save(candidate);
@@ -230,11 +242,13 @@ export class CandidateResolver {
 
 	@Mutation(() => [Candidate])
 	async saveCandidates(
-		@Arg("candidates", () => [CandidateInput]) candidatesInput: CandidateInput[]
+		@Arg("candidates", () => [CandidateInput])
+		candidatesInput: CandidateInput[],
+		@Ctx() ctx: MyContext
 	): Promise<Candidate[]> {
 		const results = [];
 		for (const candidateInput of candidatesInput) {
-			const result = await this.saveCandidate(candidateInput);
+			const result = await this.saveCandidate(candidateInput, ctx);
 			results.push(result);
 		}
 		return results;
