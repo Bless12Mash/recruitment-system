@@ -1,13 +1,9 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
+	"compilerOptions": {
+		"baseUrl": ".",
+		"moduleResolution": "Node",
+		"strict": true,
+		"esModuleInterop": true
+	},
+	"include": ["frontend/src/**/*", "server/src/**/*", "shared/**/*"]
 }

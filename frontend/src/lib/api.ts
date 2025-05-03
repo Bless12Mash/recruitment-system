@@ -1,4 +1,10 @@
-import { Candidate, CandidateLevel } from "../types/interview";
+import { Candidate } from "src/types/interview";
+import {
+	CandidateLevel,
+	CandidateProgress,
+	CandidateStatus,
+	InterviewStatus,
+} from "../../../shared/enums";
 
 const API_BASE_URL = "http://localhost:3000/api";
 
@@ -26,7 +32,7 @@ export const candidateApi = {
                     status
                     currentStep
                     steps {
-                        id
+						indexPosition
                         name
                         status
                         feedback
@@ -70,7 +76,7 @@ export const candidateApi = {
 					status
 					currentStep
 					steps {
-						id
+						indexPosition
 						name
 						status
 						feedback
@@ -118,7 +124,7 @@ export const candidateApi = {
                     status
                     currentStep
                     steps {
-                        id
+						indexPosition
                         name
                         status
                         feedback
@@ -130,6 +136,16 @@ export const candidateApi = {
                 }
             }
         `;
+
+		console.log({
+			candidate: {
+				name: candidate.name,
+				email: candidate.email,
+				role: candidate.role,
+				level: candidate.level,
+				location: candidate.location,
+			},
+		});
 
 		const response = await fetch(API_BASE_URL, {
 			method: "POST",
@@ -174,7 +190,7 @@ export const candidateApi = {
                     status
                     currentStep
                     steps {
-                        id
+						indexPosition
                         name
                         status
                         feedback
@@ -212,11 +228,11 @@ export const candidateApi = {
 
 	async updateCandidateProgress(
 		id: string,
-		progress: string,
+		progress?: CandidateProgress,
 		currentStep?: number,
 		stepData?: {
-			id: number;
-			status: string;
+			indexPosition: number;
+			status: InterviewStatus;
 			feedback?: string;
 			completedAt?: Date;
 		}
@@ -234,7 +250,7 @@ export const candidateApi = {
                     status
                     currentStep
                     steps {
-                        id
+                        indexPosition
                         name
                         status
                         feedback
@@ -246,6 +262,8 @@ export const candidateApi = {
                 }
             }
         `;
+
+		console.log("right here", { progress });
 
 		const response = await fetch(API_BASE_URL, {
 			method: "POST",
@@ -265,6 +283,8 @@ export const candidateApi = {
 
 		const result = await response.json();
 
+		console.log({ result });
+
 		if (result.errors) {
 			throw new Error(result.errors[0].message);
 		}
@@ -274,10 +294,10 @@ export const candidateApi = {
 
 	async updateCandidateStatus(
 		id: string,
-		status: string,
+		status?: CandidateStatus,
 		currentStep?: number,
 		stepData?: {
-			id: number;
+			indexPosition: number;
 			status: string;
 			feedback?: string;
 			completedAt?: Date;
@@ -296,7 +316,7 @@ export const candidateApi = {
                     status
                     currentStep
                     steps {
-                        id
+						indexPosition
                         name
                         status
                         feedback
@@ -348,7 +368,7 @@ export const candidateApi = {
 						status
 						currentStep
 						steps {
-							id
+							indexPosition
 							name
 							status
 							feedback
@@ -420,29 +440,28 @@ export const fetchPaginatedCandidates = async (
 ): Promise<PaginatedCandidates> => {
 	const query = `
     query PaginatedCandidates($pagination: PaginationInput, $sort: SortInput, $filter: CandidateFilterInput) {
-      paginatedCandidates(pagination: $pagination, sort: $sort, filter: $filter) {
-        items {
-          id
-          name
-          email
-          role
-          level
-          progress
-          location
-          status
-          currentStep
-          cvUrl
-          createdAt
-          updatedAt
-		  createdBy
+    	paginatedCandidates(pagination: $pagination, sort: $sort, filter: $filter) {
+        	items {
+			id
+			name
+			email
+			role
+			level
+			progress
+			location
+			status
+			currentStep
+			cvUrl
+			createdAt
+			updatedAt
+			createdBy
         }
         total
         page
         pageSize
         totalPages
-      }
     }
-  `;
+}`;
 
 	const response = await fetch(API_BASE_URL, {
 		method: "POST",

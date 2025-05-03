@@ -1,3 +1,4 @@
+import { CandidateStatus, InterviewStatus } from "@shared/enums";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import * as XLSX from "xlsx-js-style";
@@ -22,9 +23,8 @@ export function parseExcelData(file: File): Promise<Candidate[]> {
 					email: row.email,
 					role: row.role,
 					level: row.level,
-					progress: row.progress || "Pending",
 					location: row.location,
-					status: "Open",
+					status: CandidateStatus.OPEN,
 					currentStep: 0,
 					createdBy: row.createdBy || "System Import",
 				}));
@@ -58,37 +58,37 @@ export function updateCandidateStep(
 	const currentStep = updatedSteps[stepId];
 
 	if (action === "next") {
-		currentStep.status = "completed";
+		currentStep.status = InterviewStatus.COMPLETED;
 		currentStep.completedAt = new Date();
 		currentStep.feedback = feedback;
 
 		if (stepId < updatedSteps.length - 1) {
 			candidate.currentStep = stepId + 1;
 		} else {
-			candidate.status = "Closed";
+			candidate.status = CandidateStatus.CLOSED;
 		}
 	} else if (action === "reject") {
-		currentStep.status = "rejected";
+		currentStep.status = InterviewStatus.REJECTED;
 		currentStep.completedAt = new Date();
 		currentStep.feedback = feedback;
-		candidate.status = "Closed";
+		candidate.status = CandidateStatus.CLOSED;
 	} else if (action === "update" && feedback) {
 		currentStep.feedback = feedback;
 	} else if (action === "back") {
 		if (stepId > 0) {
 			currentStep.feedback = "";
-			currentStep.status = "pending";
+			currentStep.status = InterviewStatus.PENDING;
 			currentStep.completedAt = undefined;
 
 			candidate.currentStep = stepId - 1;
 
 			const previousStep = updatedSteps[stepId - 1];
-			previousStep.status = "pending";
+			previousStep.status = InterviewStatus.PENDING;
 		}
 	} else if (action === "unreject") {
-		currentStep.status = "pending";
+		currentStep.status = InterviewStatus.PENDING;
 		currentStep.completedAt = undefined;
-		candidate.status = "Open";
+		candidate.status = CandidateStatus.OPEN;
 		candidate.currentStep = stepId;
 	}
 

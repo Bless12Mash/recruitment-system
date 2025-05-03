@@ -1,6 +1,7 @@
 import { showToast } from "@/App";
 import { candidateApi } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CandidateLevel } from "@shared/enums";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,9 +20,6 @@ enum ROLES {
     "Product Manager" = "Product Manager"
 }
 
-enum LEVELS { "Junior" = "Junior", "Mid" = "Mid", "Senior" = "Senior", "Lead" = "Lead" }
-
-
 export function AddCandidate() {
     const [isLoading, setIsLoading] = useState(false);
 
@@ -34,7 +32,7 @@ export function AddCandidate() {
             .email("Please enter a valid email.")
             .transform((value) => value.toLowerCase()),
         role: z.nativeEnum(ROLES, { message: 'Please select the candidate\'s role.' }),
-        level: z.nativeEnum(LEVELS, { message: 'Please select the candidate\'s level.' }),
+        level: z.nativeEnum(CandidateLevel, { message: 'Please select the candidate\'s level.' }),
         location: z.string().min(2, {
             message: "Please enter a valid location.",
         }),
@@ -141,12 +139,12 @@ export function AddCandidate() {
                                         <FormItem>
                                             <FormLabel>Level</FormLabel>
                                             <FormControl>
-                                                <Select {...field} onValueChange={(value) => form.setValue("level", LEVELS[value as keyof typeof LEVELS])}>
+                                                <Select {...field} onValueChange={(value) => form.setValue("level", CandidateLevel[value as keyof typeof CandidateLevel])}>
                                                     <SelectTrigger className="w-xl">
                                                         <SelectValue placeholder="level">{ }</SelectValue>
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {Object.values(LEVELS).map(level => <SelectItem value={level}>{level}</SelectItem>)}
+                                                        {Object.values(CandidateLevel).map(level => <SelectItem value={level}>{level}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </FormControl>

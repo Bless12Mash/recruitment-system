@@ -1,43 +1,26 @@
-import { Field, ID, ObjectType, registerEnumType } from "type-graphql";
+import { Field, ID, ObjectType } from "type-graphql";
 import {
 	Column,
 	CreateDateColumn,
 	Entity,
-	JoinTable,
-	ManyToMany,
 	ManyToOne,
-	OneToMany,
 	PrimaryGeneratedColumn,
 	Relation,
 	UpdateDateColumn,
 } from "typeorm";
+
+import { Candidate } from "./Candidate";
+import { InterviewStep } from "./InterviewStep";
 
 import {
 	CandidateLevel,
 	CandidateProgress,
 	CandidateStatus,
 } from "../../../shared/enums";
-import { CandidateHistory } from "./CandidateHistory";
-import { InterviewStep } from "./InterviewStep";
 
-registerEnumType(CandidateLevel, {
-	name: "CandidateLevel",
-	description: "The level of the candidate",
-});
-
-registerEnumType(CandidateProgress, {
-	name: "CandidateProgress",
-	description: "The progress of the candidate",
-});
-
-registerEnumType(CandidateStatus, {
-	name: "CandidateStatus",
-	description: "The status of the candidate",
-});
-
-@ObjectType()
 @Entity()
-export class Candidate {
+@ObjectType()
+export class CandidateHistory {
 	@Field(() => ID)
 	@PrimaryGeneratedColumn("uuid")
 	id!: string;
@@ -83,6 +66,10 @@ export class Candidate {
 	@Column({ default: 0 })
 	currentStep!: number;
 
+	@Field(() => [InterviewStep])
+	@Column("jsonb", { default: [] })
+	steps!: InterviewStep[];
+
 	@Field()
 	@Column()
 	createdBy!: string;
@@ -103,23 +90,8 @@ export class Candidate {
 	@Column({ nullable: true })
 	cvUrl?: string;
 
-	@Field(() => [InterviewStep])
-	@ManyToMany(() => InterviewStep, (interviews) => interviews.candidate, {
+	@ManyToOne(() => Candidate, (candidate) => candidate.history, {
 		onDelete: "CASCADE",
 	})
-	@JoinTable({
-		name: "candidate_interviews",
-		joinColumn: {
-			name: "candidate_id",
-			referencedColumnName: "id",
-		},
-		inverseJoinColumn: {
-			name: "interviewStep_id",
-			referencedColumnName: "id",
-		},
-	})
-	steps!: InterviewStep[];
-
-	@OneToMany(() => CandidateHistory, (history) => history.candidate)
-	history!: CandidateHistory;
+	candidate!: Candidate;
 }

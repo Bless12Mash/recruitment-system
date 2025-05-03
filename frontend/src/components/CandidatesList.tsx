@@ -18,10 +18,10 @@ import {
     FilterInputs,
     PaginationControls,
     roleOptions,
-    levelOptions,
     getProgressStyle,
 } from "./CandidatesList/utils";
 import { fetchPaginatedCandidates } from "@/lib/api";
+import { CandidateLevel } from "@shared/enums";
 
 interface CandidatesListProps {
     onCandidateClick: (candidate: Candidate) => void
@@ -90,7 +90,7 @@ export function CandidatesList({ onCandidateClick }: CandidatesListProps) {
             header: ({ column }) => (
                 <SortableColumnHeader column={column}>Level</SortableColumnHeader>
             ),
-            cell: ({ row }) => levelOptions.find(level => level.value === row.getValue("level"))?.label,
+            cell: ({ row }) => Object.keys(CandidateLevel).find(level => level.valueOf() === row.getValue("level"))?.valueOf(),
             enableResizing: true,
             size: 120,
         },
@@ -123,7 +123,7 @@ export function CandidatesList({ onCandidateClick }: CandidatesListProps) {
                 return (
                     <span className={cn(
                         "inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset",
-                        status === "Open" ? "bg-green-100 text-green-800 ring-green-600/20" : "bg-red-100 text-red-800 ring-red-600/20"
+                        status === "OPEN" ? "bg-green-100 text-green-800 ring-green-600/20" : "bg-red-100 text-red-800 ring-red-600/20"
                     )}>
                         {status}
                     </span>

@@ -1,3 +1,4 @@
+import { CandidateLevel, CandidateProgress, CandidateStatus } from "@shared/enums";
 import { Column, Table } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Button } from "../ui/button";
@@ -42,29 +43,6 @@ export const roleOptions = [
     { value: "DevOps Engineer", label: "DevOps Engineer" },
     { value: "UI/UX Designer", label: "UI/UX Designer" },
     { value: "Product Manager", label: "Product Manager" },
-];
-
-export const levelOptions = [
-    { value: "Junior", label: "Junior" },
-    { value: "Mid", label: "Mid" },
-    { value: "Senior", label: "Senior" },
-    { value: "Lead", label: "Lead" },
-];
-
-export const progressOptions = [
-    { value: "Pending", label: "Pending" },
-    { value: "Shortlisted", label: "Shortlisted" },
-    { value: "On Hold", label: "On Hold" },
-    { value: "Offered", label: "Offered" },
-    { value: "Offer Accepted", label: "Offer Accepted" },
-    { value: "Offer Rejected", label: "Offer Rejected" },
-    { value: "Hired", label: "Hired" },
-    { value: "Rejected", label: "Rejected" },
-];
-
-export const statusOptions = [
-    { value: "Open", label: "Open" },
-    { value: "Closed", label: "Closed" },
 ];
 
 interface FilterInputsProps {
@@ -119,9 +97,9 @@ export function FilterInputs({ table }: FilterInputsProps) {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Levels</SelectItem>
-                    {levelOptions.map((level) => (
-                        <SelectItem key={level.value} value={level.value}>
-                            {level.label}
+                    {Object.keys(CandidateLevel).map((level) => (
+                        <SelectItem key={level.valueOf()} value={level.valueOf()}>
+                            {level.valueOf()}
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -137,9 +115,9 @@ export function FilterInputs({ table }: FilterInputsProps) {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Statuses</SelectItem>
-                    {statusOptions.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                            {status.label}
+                    {Object.keys(CandidateStatus).map((status) => (
+                        <SelectItem key={status.valueOf()} value={status.valueOf()}>
+                            {status.valueOf()}
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -155,9 +133,9 @@ export function FilterInputs({ table }: FilterInputsProps) {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">All Progress</SelectItem>
-                    {progressOptions.map((progress) => (
-                        <SelectItem key={progress.value} value={progress.value}>
-                            {progress.label}
+                    {Object.keys(CandidateProgress).map((progress) => (
+                        <SelectItem key={progress.valueOf()} value={progress.valueOf()}>
+                            {progress.valueOf()}
                         </SelectItem>
                     ))}
                 </SelectContent>

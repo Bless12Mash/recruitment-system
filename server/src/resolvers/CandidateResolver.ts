@@ -1,138 +1,26 @@
+import { Arg, Ctx, ID, Int, Mutation, Query, Resolver } from "type-graphql";
 import {
-	Arg,
-	Field,
-	ID,
-	InputType,
-	Int,
-	Mutation,
-	ObjectType,
-	Query,
-	Resolver,
-	Authorized,
-	Ctx,
-} from "type-graphql";
-import { AppDataSource } from "../config/database";
+	CandidateLevel,
+	CandidateProgress,
+	CandidateStatus,
+	InterviewStatus,
+} from "../../../shared/enums";
+import { AppDataSource } from "../data-source";
 import { Candidate } from "../entities/Candidate";
+import {
+	CandidateFilterInput,
+	CandidateInput,
+	PaginatedCandidates,
+	PaginationInput,
+	SortInput,
+} from "../types/Input";
 import { MyContext } from "../types/MyContext";
-
-@InputType()
-class PaginationInput {
-	@Field(() => Int)
-	page: number = 1;
-
-	@Field(() => Int)
-	pageSize: number = 10;
-}
-
-@InputType()
-class SortInput {
-	@Field()
-	field: string = "createdAt";
-
-	@Field()
-	order: "ASC" | "DESC" = "DESC";
-}
-
-@InputType()
-class CandidateFilterInput {
-	@Field({ nullable: true })
-	name?: string;
-
-	@Field({ nullable: true })
-	email?: string;
-
-	@Field({ nullable: true })
-	role?: string;
-
-	@Field({ nullable: true })
-	level?: string;
-
-	@Field({ nullable: true })
-	status?: string;
-
-	@Field({ nullable: true })
-	location?: string;
-
-	@Field({ nullable: true })
-	progress?: string;
-}
-
-@ObjectType()
-class PaginatedCandidates {
-	@Field(() => [Candidate])
-	items: Candidate[];
-
-	@Field(() => Int)
-	total: number;
-
-	@Field(() => Int)
-	page: number;
-
-	@Field(() => Int)
-	pageSize: number;
-
-	@Field(() => Int)
-	totalPages: number;
-}
-
-@ObjectType()
-@InputType("InterviewStepInput")
-class InterviewStep {
-	@Field()
-	id: number;
-
-	@Field()
-	name: string;
-
-	@Field()
-	status: string;
-
-	@Field({ nullable: true })
-	feedback?: string;
-
-	@Field(() => Date, { nullable: true })
-	completedAt?: Date;
-}
-
-@InputType()
-class CandidateInput {
-	@Field()
-	name: string;
-
-	@Field()
-	email: string;
-
-	@Field()
-	role: string;
-
-	@Field()
-	level: string;
-
-	@Field({ nullable: true })
-	progress?: string;
-
-	@Field()
-	location: string;
-
-	@Field({ nullable: true })
-	status?: string;
-
-	@Field(() => Int, { nullable: true })
-	currentStep?: number;
-
-	@Field(() => [InterviewStep], { nullable: true })
-	steps?: InterviewStep[];
-
-	@Field({ nullable: true })
-	createdBy?: string;
-
-	@Field({ nullable: true })
-	cvUrl?: string;
-}
+import { InterviewStep } from "./../entities/InterviewStep";
 
 @Resolver(Candidate)
 export class CandidateResolver {
 	private candidateRepository = AppDataSource.getRepository(Candidate);
+	private interviewStepRepository = AppDataSource.getRepository(InterviewStep);
 
 	@Query(() => [Candidate])
 	async candidates(): Promise<Candidate[]> {
@@ -141,7 +29,14 @@ export class CandidateResolver {
 
 	@Query(() => Candidate, { nullable: true })
 	async candidate(@Arg("id", () => ID) id: string): Promise<Candidate | null> {
-		return await this.candidateRepository.findOneBy({ id });
+		const can = await this.candidateRepository.findOne({
+			where: { id: id },
+			relations: ["steps"],
+		});
+
+		console.log({ can });
+
+		return can;
 	}
 
 	@Query(() => PaginatedCandidates)
@@ -219,24 +114,59 @@ export class CandidateResolver {
 		"Final Interview",
 	] as const;
 
+	async getOrCreateCandidateSteps(ctx: MyContext) {
+		const interviewSteps = await this.interviewStepRepository.find();
+		console.log({ interviewSteps });
+		let candidateSteps: InterviewStep[] = [];
+		console.log({ check: interviewSteps.length === 0 });
+		if (interviewSteps.length === 0) {
+			this.INTERVIEW_STEPS.map(async (step, index) => {
+				const candidateStep = new InterviewStep();
+
+				candidateStep.indexPosition = index;
+				candidateStep.name = step;
+				candidateStep.status = InterviewStatus.PENDING;
+				candidateStep.createdBy = ctx.token || "";
+				candidateStep.updatedBy = ctx.token || "";
+
+				const interviewStep =
+					this.interviewStepRepository.create(candidateStep);
+				await this.interviewStepRepository.save(interviewStep);
+				candidateSteps.push(candidateStep);
+			});
+		} else {
+			candidateSteps = interviewSteps;
+		}
+		console.log({ candidateSteps });
+		return candidateSteps;
+	}
+
 	@Mutation(() => Candidate)
 	async saveCandidate(
 		@Arg("candidate") candidateInput: CandidateInput,
 		@Ctx() ctx: MyContext
 	): Promise<Candidate> {
-		candidateInput.steps = [
-			{ id: 0, name: this.INTERVIEW_STEPS[0], status: "Pending" },
-			{ id: 1, name: this.INTERVIEW_STEPS[1], status: "Pending" },
-			{ id: 2, name: this.INTERVIEW_STEPS[2], status: "Pending" },
-			{ id: 3, name: this.INTERVIEW_STEPS[3], status: "Pending" },
-		];
+		const candidateSteps = await this.getOrCreateCandidateSteps(ctx);
 
-		candidateInput.currentStep = 0;
-		candidateInput.status = "Open";
-		candidateInput.createdBy = ctx.token;
-		candidateInput.progress = "Pending";
+		console.log({ candidateSteps });
 
-		const candidate = this.candidateRepository.create(candidateInput);
+		const newCandidate = new Candidate();
+		newCandidate.name = candidateInput.name;
+		newCandidate.email = candidateInput.email;
+		newCandidate.role = candidateInput.role;
+		newCandidate.level = getEnumValueFromKey(
+			CandidateLevel,
+			candidateInput.level
+		);
+		newCandidate.progress = CandidateProgress.PENDING;
+		newCandidate.location = candidateInput.location;
+		newCandidate.status = CandidateStatus.OPEN;
+		newCandidate.currentStep = 0;
+		newCandidate.steps = candidateSteps;
+		newCandidate.createdBy = ctx.token || "";
+		newCandidate.updatedBy = ctx.token || "";
+
+		const candidate = this.candidateRepository.create(newCandidate);
 		return await this.candidateRepository.save(candidate);
 	}
 
@@ -261,20 +191,32 @@ export class CandidateResolver {
 		@Arg("currentStep", () => Int, { nullable: true }) currentStep?: number,
 		@Arg("stepData", { nullable: true }) stepData?: string
 	): Promise<Candidate> {
-		const candidate = await this.candidateRepository.findOneByOrFail({ id });
+		const candidate = await this.candidateRepository.findOneOrFail({
+			where: { id: id },
+			relations: ["steps"],
+		});
 
-		candidate.progress = progress;
+		candidate.progress = getEnumValueFromKey(CandidateProgress, progress);
 		if (currentStep !== undefined) {
 			candidate.currentStep = currentStep;
 		}
+
+		console.log({ candidate }, { step: candidate.steps });
 		if (stepData) {
 			const steps = [...candidate.steps];
 			const stepUpdate = JSON.parse(stepData);
-			const stepIndex = steps.findIndex((s) => s.id === stepUpdate.id);
+			const stepIndex = steps.findIndex(
+				(s) => s.indexPosition === stepUpdate.indexPosition
+			);
 			if (stepIndex >= 0) {
 				steps[stepIndex] = { ...steps[stepIndex], ...stepUpdate };
 			}
-			candidate.steps = steps;
+			console.log({ steps });
+			console.log({ stepData });
+			const updatedStep = await this.interviewStepRepository.save(steps);
+			candidate.steps = updatedStep;
+
+			console.log({ cannyStep: candidate.steps });
 		}
 
 		return await this.candidateRepository.save(candidate);
@@ -287,9 +229,12 @@ export class CandidateResolver {
 		@Arg("currentStep", () => Int, { nullable: true }) currentStep?: number,
 		@Arg("stepData", { nullable: true }) stepData?: string
 	): Promise<Candidate> {
-		const candidate = await this.candidateRepository.findOneByOrFail({ id });
+		const candidate = await this.candidateRepository.findOneOrFail({
+			where: { id: id },
+			relations: ["steps"],
+		});
 
-		candidate.status = status;
+		candidate.status = getEnumValueFromKey(CandidateStatus, status);
 		if (currentStep !== undefined) {
 			candidate.currentStep = currentStep;
 		}
@@ -317,4 +262,11 @@ export class CandidateResolver {
 
 		return await this.candidateRepository.save(candidate);
 	}
+}
+
+function getEnumValueFromKey<T extends Record<string, string | number>>(
+	enumObj: T,
+	key: string
+): T[keyof T] {
+	return enumObj[key as keyof T];
 }

@@ -47,6 +47,7 @@ function App() {
     try {
       if (candidate.id !== undefined) {
         const fullCandidate = await candidateApi.candidate(candidate.id)
+        console.log({ fullCandidate })
         setSelectedCandidate(fullCandidate)
       }
 
@@ -70,12 +71,14 @@ function App() {
           updatedCandidate.progress,
           updatedCandidate.currentStep,
           {
-            id: stepId,
+            indexPosition: stepId,
             status: stepData.status,
             feedback: stepData.feedback,
             completedAt: stepData.completedAt
           }
         );
+
+        console.log({ savedCandidate })
 
         setSelectedCandidate(savedCandidate);
 
@@ -126,6 +129,7 @@ function App() {
   };
 
   const handleProgressChange = async (updatedCandidate: Candidate) => {
+    console.log({ updatedCandidate })
     try {
       if (updatedCandidate.id !== undefined) {
         const savedCandidate = await candidateApi.updateCandidateProgress(
