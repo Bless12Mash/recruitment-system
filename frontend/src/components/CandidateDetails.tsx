@@ -7,6 +7,7 @@ import {
     getStepIcon,
     StepFeedback
 } from './CandidateDetails/utils';
+import { CandidateStatus, InterviewStatus } from '@shared/enums';
 
 interface CandidateDetailsProps {
     candidate: Candidate;
@@ -22,6 +23,9 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
     const [expandedStep, setExpandedStep] = React.useState<number | null>(candidate.currentStep);
     const [feedbackError, setFeedbackError] = React.useState<string>('');
 
+
+    console.log({ feedback }, { activeStep }, { expandedStep })
+
     useEffect(() => {
         if (expandedStep !== null) {
             candidate.steps ? setFeedback(candidate.steps[expandedStep]?.feedback || '') : setFeedback('')
@@ -30,7 +34,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
 
     const handleToggleStep = (stepId: number) => {
         setExpandedStep(expandedStep === stepId ? null : stepId);
-        if (candidate.steps && candidate.steps[stepId].status === 'pending' || stepId === candidate.currentStep) {
+        if (candidate.steps && candidate.steps[stepId].status === InterviewStatus.PENDING || stepId === candidate.currentStep) {
             setActiveStep(stepId);
         }
         candidate.steps ? setFeedback(candidate.steps[stepId]?.feedback || '') : setFeedback('')
@@ -89,7 +93,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
         const handleKeyboardShortcuts = (e: KeyboardEvent) => {
             if (e.target instanceof HTMLTextAreaElement) return;
 
-            if (candidate.status === 'Open') {
+            if (candidate.status === CandidateStatus.OPEN) {
                 if (e.key === 'n' && !e.metaKey && !e.ctrlKey) {
                     handleStepUpdate(activeStep, 'next');
                 } else if (e.key === 'r' && !e.metaKey && !e.ctrlKey) {
@@ -117,7 +121,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
     }, [candidate.status, activeStep, expandedStep, candidate.steps?.length]);
 
     const handleStatusToggle = () => {
-        const newStatus = candidate.status === 'Open' ? 'Closed' : 'Open';
+        const newStatus = candidate.status === CandidateStatus.OPEN ? CandidateStatus.CLOSED : CandidateStatus.OPEN;
         if (onStatusChange) {
             onStatusChange({
                 ...candidate,
@@ -128,11 +132,11 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
     };
 
     const handleProgressChange = (newProgress: CandidateProgress) => {
+        console.log({ newProgress })
         if (onProgressChange) {
             onProgressChange({
                 ...candidate,
                 progress: newProgress,
-                updatedAt: new Date()
             });
         }
     };
@@ -159,8 +163,8 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
                         className={cn(
                             "border rounded-lg overflow-hidden transition-all duration-200",
                             expandedStep === index && "ring-2 ring-primary",
-                            step.status === 'completed' && "bg-green-50/50",
-                            step.status === 'rejected' && "bg-red-50/50"
+                            step.status === InterviewStatus.COMPLETED && "bg-green-50/50",
+                            step.status === InterviewStatus.REJECTED && "bg-red-50/50"
                         )}
                     >
                         <div
@@ -168,7 +172,7 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
                             tabIndex={0}
                             className={cn(
                                 "flex items-center justify-between p-4 cursor-pointer hover:bg-accent/50 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                                (index === activeStep && candidate.status === 'Open') && "bg-accent"
+                                (index === activeStep && candidate.status === CandidateStatus.OPEN) && "bg-accent"
                             )}
                             onClick={() => handleToggleStep(index)}
                             onKeyDown={(e) => handleKeyPress(e, index)}
@@ -193,9 +197,9 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
 
                         {expandedStep === index && (
                             <div className="p-4 border-t bg-background">
-                                {(index === activeStep && candidate.status === 'Open' || step.feedback) && (
+                                {(index === activeStep && candidate.status === CandidateStatus.OPEN || step.feedback) && (
                                     <StepFeedback
-                                        isActive={index === activeStep && candidate.status === 'Open'}
+                                        isActive={index === activeStep && candidate.status === CandidateStatus.OPEN}
                                         feedback={feedback}
                                         feedbackError={feedbackError}
                                         stepStatus={step.status}

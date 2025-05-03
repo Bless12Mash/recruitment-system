@@ -1,0 +1,13 @@
+{
+	"name": "shared",
+	"version": "1.0.0",
+	"main": "index.js",
+	"types": "enums.d.ts",
+	"scripts": {
+		"build:shared": "tsc --project tsconfig.json"
+	},
+	"keywords": [],
+	"author": "Blessing Mashile-Zwane",
+	"license": "ISC",
+	"description": ""
+}

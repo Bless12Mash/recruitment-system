@@ -1,15 +1,15 @@
-import { InterviewStatus, CandidateProgress } from '../../types/interview';
 import { CheckCircle2, XCircle, Circle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { InterviewStatus, CandidateProgress, CandidateStatus } from '../../../../shared/enums';
 
 export const getStepIcon = (status: InterviewStatus) => {
     switch (status) {
-        case 'completed':
+        case InterviewStatus.COMPLETED:
             return <CheckCircle2 className="h-6 w-6 text-green-500" />;
-        case 'rejected':
+        case InterviewStatus.REJECTED:
             return <XCircle className="h-6 w-6 text-red-500" />;
         default:
             return <Circle className="h-6 w-6 text-gray-300" />;
@@ -33,8 +33,8 @@ interface CandidateHeaderProps {
     role: string;
     level: string;
     location: string;
-    progress: string;
-    status: string;
+    progress?: CandidateProgress;
+    status?: CandidateStatus;
     cvLink?: string;
     onCVUpload: (cvLink: string) => void;
     onStatusChange: () => void;
@@ -67,14 +67,7 @@ export const CandidateHeader = ({
                         <SelectValue>{progress}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Shortlisted">Shortlisted</SelectItem>
-                        <SelectItem value="On Hold">On Hold</SelectItem>
-                        <SelectItem value="Offered">Offered</SelectItem>
-                        <SelectItem value="Offer Accepted">Offer Accepted</SelectItem>
-                        <SelectItem value="Offer Rejected">Offer Rejected</SelectItem>
-                        <SelectItem value="Hired">Hired</SelectItem>
-                        <SelectItem value="Rejected">Rejected</SelectItem>
+                        {Object.keys(CandidateProgress).map((progress) => <SelectItem value={progress}>{progress}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </p>
@@ -83,7 +76,7 @@ export const CandidateHeader = ({
                     onClick={onStatusChange}
                     className={cn(
                         "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium cursor-pointer transition-colors",
-                        status === 'Open' ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        status === CandidateStatus.OPEN ? "bg-green-50 text-green-700 hover:bg-green-100" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     )}
                 >
                     {status}
@@ -142,15 +135,15 @@ export const StepFeedback = ({
     onUpdateStep
 }: StepFeedbackProps) => {
     const canMoveToNext = stepIndex === currentStep && steps &&
-        (stepIndex === 0 || steps[stepIndex - 1]?.status === 'completed');
+        (stepIndex === 0 || steps[stepIndex - 1]?.status === InterviewStatus.COMPLETED);
 
     return (
         <div className="space-y-4">
             <div>
-                {!isActive && stepStatus !== 'pending' && (
+                {!isActive && stepStatus !== InterviewStatus.PENDING && (
                     <div className="mb-4">
                         <h4 className="text-sm font-medium mb-2">
-                            {stepStatus === 'completed' ? 'Completed with feedback:' : 'Rejected with feedback:'}
+                            {stepStatus === InterviewStatus.COMPLETED ? 'Completed with feedback:' : 'Rejected with feedback:'}
                         </h4>
                         <div className="text-sm bg-muted/50 p-4 rounded-md whitespace-pre-wrap">
                             {feedback}
@@ -164,7 +157,7 @@ export const StepFeedback = ({
                     className={cn(
                         "min-h-[100px]",
                         feedbackError && "border-red-500 focus-visible:ring-red-500",
-                        !isActive && stepStatus === 'pending' && "opacity-50"
+                        !isActive && stepStatus === InterviewStatus.PENDING && "opacity-50"
                     )}
                     disabled={!isActive && stepIndex !== currentStep}
                 />
@@ -195,7 +188,7 @@ export const StepFeedback = ({
                         </Button>
                     </>
                 )}
-                {stepIndex === currentStep && stepIndex > 0 && steps && steps[stepIndex - 1]?.status === 'completed' && (
+                {stepIndex === currentStep && stepIndex > 0 && steps && steps[stepIndex - 1]?.status === InterviewStatus.COMPLETED && (
                     <Button
                         variant="outline"
                         onClick={() => onUpdateStep(stepIndex, 'back')}
@@ -203,7 +196,7 @@ export const StepFeedback = ({
                         Go Back
                     </Button>
                 )}
-                {!isActive && stepStatus !== 'pending' && (
+                {!isActive && stepStatus !== InterviewStatus.PENDING && (
                     <>
                         <Button
                             variant="outline"
@@ -211,7 +204,7 @@ export const StepFeedback = ({
                         >
                             Update Feedback
                         </Button>
-                        {stepStatus === 'rejected' && (
+                        {stepStatus === InterviewStatus.REJECTED && (
                             <Button
                                 variant="default"
                                 onClick={() => onUpdateStep(stepIndex, 'unreject')}

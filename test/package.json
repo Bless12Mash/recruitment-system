@@ -1,0 +1,31 @@
+{
+	"name": "test",
+	"version": "1.0.0",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"start": "nodemon server.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"description": "",
+	"dependencies": {
+		"express": "^5.1.0",
+		"nodemon": "^3.1.10",
+		"pg": "^8.15.6",
+		"typeorm": "^0.3.22"
+	}
+}
+
+
+"watch": "tsc -w",
+		"start": "tsc && node src/index.js",
+		"typeorm": "./node_modules/.bin/typeorm",
+		"build": "tsc",
+		"dev": "nodemon index.ts",
+		"init-db": "ts-node src/scripts/initDb.ts",
+		"migration:run": " npm run typeorm migration:run -- -d ./src/data-source.ts",
+		"migration:generate": " npm run typeorm migration:generate -- -d ./src/data-source.ts",
+		"migration:create": " npm run typeorm migration:create -n Migrations",
+		"migration:revert": " npm run typeorm migration:revert -- -d ./src/data-source.ts"

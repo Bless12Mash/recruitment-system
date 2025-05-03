@@ -1,8 +1,7 @@
-import { AppDataSource } from "../config/database";
+import { AppDataSource } from "../data-source";
 import { DataSource } from "typeorm";
 import { config } from "dotenv";
 
-// Load environment variables
 config();
 
 console.log("Database connection settings:", {
@@ -15,20 +14,18 @@ console.log("Database connection settings:", {
 
 async function initializeDatabase() {
 	try {
-		// Create a temporary data source just for creating the database
 		const tempDataSource = new DataSource({
 			type: "postgres",
 			host: process.env.DB_HOST || "localhost",
 			port: parseInt(process.env.DB_PORT || "5432"),
 			username: process.env.DB_USERNAME || "postgres",
 			password: process.env.DB_PASSWORD || "blessing",
-			database: "postgres", // Connect to default postgres database first
+			database: "postgres",
 		});
 
 		await tempDataSource.initialize();
 		console.log("Connected to temporary database successfully");
 
-		// Create the database if it doesn't exist
 		await tempDataSource
 			.query(`CREATE DATABASE ${process.env.DB_NAME || "recruitment"}`)
 			.catch(() => {
@@ -37,7 +34,6 @@ async function initializeDatabase() {
 
 		await tempDataSource.destroy();
 
-		// Initialize the actual data source
 		await AppDataSource.initialize();
 		console.log("Data Source has been initialized!");
 

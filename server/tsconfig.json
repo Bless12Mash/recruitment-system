@@ -1,17 +1,15 @@
 {
+	"extends": "../tsconfig.json",
 	"compilerOptions": {
+		"outDir": "../dist/backend",
+		"rootDir": "./",
+		"module": "CommonJS",
 		"target": "ES2020",
-		"module": "commonjs",
-		"lib": ["ES2020"],
-		"strict": true,
 		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
-		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		"strictPropertyInitialization": false,
-		"outDir": "./dist"
+		"emitDecoratorMetadata": true
 	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules"]
+	"exclude": ["node_modules"],
+	"include": ["./**/*.ts"],
+	"references": [{ "path": "../shared" }]
 }

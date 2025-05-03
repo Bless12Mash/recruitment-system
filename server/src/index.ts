@@ -4,7 +4,7 @@ import cors from "cors";
 import express from "express";
 import "reflect-metadata";
 import { buildSchema } from "type-graphql";
-import { AppDataSource } from "./config/database";
+import { AppDataSource } from "./data-source";
 import { CandidateResolver } from "./resolvers/CandidateResolver";
 
 async function main() {
@@ -14,9 +14,8 @@ async function main() {
 	const app = express();
 
 	app.use(cors());
-	var bodyParser = require("body-parser");
-	app.use(bodyParser.json({ limit: "50mb" }));
-	app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+	app.use(express.json({ limit: "50mb" }));
+	app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 	const schema = await buildSchema({
 		resolvers: [CandidateResolver],
@@ -36,7 +35,7 @@ async function main() {
 	);
 
 	app.listen(3000, () => {
-		console.log("Server running on http://localhost:3000");
+		console.log("Server running on http://localhost:3000/api");
 	});
 }
 
