@@ -30,14 +30,12 @@ export class CandidateResolver {
 
 	@Query(() => Candidate, { nullable: true })
 	async candidate(@Arg("id", () => ID) id: string): Promise<Candidate | null> {
-		const can = await this.candidateRepository.findOne({
-			where: { id: id },
-			relations: ["steps"],
-		});
-
-		console.log({ can });
-
-		return can;
+		return await this.candidateRepository
+			.createQueryBuilder("candidate")
+			.leftJoinAndSelect("candidate.steps", "interviewStep")
+			.where("candidate.id = :id", { id })
+			.orderBy("interviewStep.indexPosition", "ASC")
+			.getOne();
 	}
 
 	@Query(() => PaginatedCandidates)
@@ -176,7 +174,7 @@ export class CandidateResolver {
 			candidateInput.steps
 		);
 
-		console.log({ candidateSteps });
+		console.log({ candidateSteps }, { pro: candidateInput.progress });
 
 		const newCandidate = new Candidate();
 		newCandidate.name = candidateInput.name;
@@ -220,35 +218,56 @@ export class CandidateResolver {
 		@Arg("currentStep", () => Int, { nullable: true }) currentStep?: number,
 		@Arg("stepData", { nullable: true }) stepData?: string
 	): Promise<Candidate> {
-		const candidate = await this.candidateRepository.findOneOrFail({
+		const currentCandidate = await this.candidateRepository.findOneOrFail({
 			where: { id: id },
 			relations: ["steps"],
 		});
 
-		candidate.progress = getEnumValueFromKey(CandidateProgress, progress);
+		currentCandidate.progress = getEnumValueFromKey(
+			CandidateProgress,
+			progress
+		);
 		if (currentStep !== undefined) {
-			candidate.currentStep = currentStep;
+			currentCandidate.currentStep = currentStep;
 		}
 
-		console.log({ candidate }, { step: candidate.steps });
 		if (stepData) {
-			const steps = [...candidate.steps];
+			const steps = [...currentCandidate.steps];
+
 			const stepUpdate = JSON.parse(stepData);
 			const stepIndex = steps.findIndex(
 				(s) => s.indexPosition === stepUpdate.indexPosition
 			);
+
+			const previousStep = steps[stepIndex];
+
 			if (stepIndex >= 0) {
 				steps[stepIndex] = { ...steps[stepIndex], ...stepUpdate };
 			}
-			console.log({ steps });
-			console.log({ stepData });
+			if (steps[stepIndex].status === InterviewStatus.REJECTED) {
+				currentCandidate.progress = CandidateProgress.REJECTED;
+				currentCandidate.status = CandidateStatus.CLOSED;
+			}
+			if (
+				previousStep.status === InterviewStatus.REJECTED &&
+				steps[stepIndex].status === InterviewStatus.PENDING
+			) {
+				currentCandidate.progress = CandidateProgress.PENDING;
+				currentCandidate.status = CandidateStatus.OPEN;
+			}
 			const updatedStep = await this.interviewStepRepository.save(steps);
-			candidate.steps = updatedStep;
-
-			console.log({ cannyStep: candidate.steps });
+			currentCandidate.steps = updatedStep;
 		}
 
-		return await this.candidateRepository.save(candidate);
+		const updatedCandidate = await this.candidateRepository.save(
+			currentCandidate
+		);
+
+		const latestCandidate = await this.candidate(updatedCandidate.id);
+		if (latestCandidate === null) {
+			throw new Error("Candidate not found");
+		}
+		return latestCandidate;
 	}
 
 	@Mutation(() => Candidate)

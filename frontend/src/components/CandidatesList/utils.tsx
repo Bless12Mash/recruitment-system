@@ -226,21 +226,21 @@ export function PaginationControls({ table, totalItems, isLoading }: PaginationC
 
 export function getProgressStyle(progress: string) {
     switch (progress) {
-        case "Hired":
+        case "HIRED":
             return "bg-green-100 text-green-800 ring-green-600/20";
-        case "Rejected":
+        case "REJECTED":
             return "bg-red-100 text-red-800 ring-red-600/20";
-        case "On Hold":
+        case "ON_HOLD":
             return "bg-yellow-100 text-yellow-800 ring-yellow-600/20";
-        case "Shortlisted":
+        case "SHORTLISTED":
             return "bg-blue-100 text-blue-800 ring-blue-600/20";
-        case "Pending":
+        case "PENDING":
             return "bg-gray-100 text-gray-800 ring-gray-600/20";
-        case "Offered":
+        case "OFFERED":
             return "bg-purple-100 text-purple-800 ring-purple-600/20";
-        case "Offer Accepted":
+        case "OFFER_ACCEPTED":
             return "bg-emerald-100 text-emerald-800 ring-emerald-600/20";
-        case "Offer Rejected":
+        case "OFFER_REJECTED":
             return "bg-rose-100 text-rose-800 ring-rose-600/20";
         default:
             return "bg-gray-100 text-gray-800 ring-gray-600/20";

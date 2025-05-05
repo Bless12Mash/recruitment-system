@@ -60,8 +60,6 @@ export class TimestampSubscriber implements EntitySubscriberInterface<any> {
 				this.candidateHistoryRepository.create(candidateHistory);
 			await this.candidateHistoryRepository.save(candidate);
 		}
-
-		console.log({ entity });
 	}
 
 	async beforeUpdate(event: UpdateEvent<any>) {
@@ -104,7 +102,5 @@ export class TimestampSubscriber implements EntitySubscriberInterface<any> {
 				this.candidateHistoryRepository.create(candidateHistory);
 			await this.candidateHistoryRepository.save(candidate);
 		}
-
-		console.log({ entity });
 	}
 }
