@@ -23,9 +23,6 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
     const [expandedStep, setExpandedStep] = React.useState<number | null>(candidate.currentStep);
     const [feedbackError, setFeedbackError] = React.useState<string>('');
 
-
-    console.log({ feedback }, { activeStep }, { expandedStep })
-
     useEffect(() => {
         if (expandedStep !== null) {
             candidate.steps ? setFeedback(candidate.steps[expandedStep]?.feedback || '') : setFeedback('')
@@ -132,7 +129,6 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
     };
 
     const handleProgressChange = (newProgress: CandidateProgress) => {
-        console.log({ newProgress })
         if (onProgressChange) {
             onProgressChange({
                 ...candidate,

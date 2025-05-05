@@ -137,16 +137,6 @@ export const candidateApi = {
             }
         `;
 
-		console.log({
-			candidate: {
-				name: candidate.name,
-				email: candidate.email,
-				role: candidate.role,
-				level: candidate.level,
-				location: candidate.location,
-			},
-		});
-
 		const response = await fetch(API_BASE_URL, {
 			method: "POST",
 			headers: {
@@ -259,11 +249,10 @@ export const candidateApi = {
                     createdAt
                     updatedAt
                     createdBy
+					cvUrl
                 }
             }
         `;
-
-		console.log("right here", { progress });
 
 		const response = await fetch(API_BASE_URL, {
 			method: "POST",
@@ -282,8 +271,6 @@ export const candidateApi = {
 		});
 
 		const result = await response.json();
-
-		console.log({ result });
 
 		if (result.errors) {
 			throw new Error(result.errors[0].message);
@@ -325,6 +312,7 @@ export const candidateApi = {
                     createdAt
                     updatedAt
                     createdBy
+					cvUrl
                 }
             }
         `;

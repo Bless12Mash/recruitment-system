@@ -10,6 +10,7 @@ import { Candidate } from "../entities/Candidate";
 import {
 	CandidateFilterInput,
 	CandidateInput,
+	InterviewStepInput,
 	PaginatedCandidates,
 	PaginationInput,
 	SortInput,
@@ -29,14 +30,12 @@ export class CandidateResolver {
 
 	@Query(() => Candidate, { nullable: true })
 	async candidate(@Arg("id", () => ID) id: string): Promise<Candidate | null> {
-		const can = await this.candidateRepository.findOne({
-			where: { id: id },
-			relations: ["steps"],
-		});
-
-		console.log({ can });
-
-		return can;
+		return await this.candidateRepository
+			.createQueryBuilder("candidate")
+			.leftJoinAndSelect("candidate.steps", "interviewStep")
+			.where("candidate.id = :id", { id })
+			.orderBy("interviewStep.indexPosition", "ASC")
+			.getOne();
 	}
 
 	@Query(() => PaginatedCandidates)
@@ -78,8 +77,8 @@ export class CandidateResolver {
 				});
 			}
 			if (filter.progress && filter.progress !== "all") {
-				queryBuilder.andWhere("candidate.progress ILIKE :progress", {
-					progress: `%${filter.progress}%`,
+				queryBuilder.andWhere("candidate.progress = :progress", {
+					progress: filter.progress,
 				});
 			}
 		}
@@ -114,13 +113,35 @@ export class CandidateResolver {
 		"Final Interview",
 	] as const;
 
-	async getOrCreateCandidateSteps(ctx: MyContext) {
-		const interviewSteps = await this.interviewStepRepository.find();
-		console.log({ interviewSteps });
-		let candidateSteps: InterviewStep[] = [];
-		console.log({ check: interviewSteps.length === 0 });
-		if (interviewSteps.length === 0) {
-			this.INTERVIEW_STEPS.map(async (step, index) => {
+	async getOrCreateCandidateSteps(
+		ctx: MyContext,
+		steps?: InterviewStepInput[]
+	) {
+		if (steps !== undefined && steps !== null) {
+			let candidateSteps: InterviewStep[] = [];
+			const promises = steps?.map(async (step) => {
+				const candidateStep = new InterviewStep();
+
+				candidateStep.indexPosition = step.indexPosition;
+				candidateStep.name = step.name;
+				candidateStep.status = step.status;
+				candidateStep.feedback = step.feedback;
+				candidateStep.createdBy = ctx.token || "";
+				candidateStep.updatedBy = ctx.token || "";
+
+				const interviewStep =
+					this.interviewStepRepository.create(candidateStep);
+				await this.interviewStepRepository.save(interviewStep);
+				return interviewStep;
+			});
+
+			const results = await Promise.all(promises);
+			candidateSteps.push(...results);
+
+			return candidateSteps;
+		} else {
+			let candidateSteps: InterviewStep[] = [];
+			const promises = this.INTERVIEW_STEPS.map(async (step, index) => {
 				const candidateStep = new InterviewStep();
 
 				candidateStep.indexPosition = index;
@@ -132,13 +153,15 @@ export class CandidateResolver {
 				const interviewStep =
 					this.interviewStepRepository.create(candidateStep);
 				await this.interviewStepRepository.save(interviewStep);
-				candidateSteps.push(candidateStep);
+
+				return interviewStep;
 			});
-		} else {
-			candidateSteps = interviewSteps;
+
+			const results = await Promise.all(promises);
+			candidateSteps.push(...results);
+
+			return candidateSteps;
 		}
-		console.log({ candidateSteps });
-		return candidateSteps;
 	}
 
 	@Mutation(() => Candidate)
@@ -146,9 +169,10 @@ export class CandidateResolver {
 		@Arg("candidate") candidateInput: CandidateInput,
 		@Ctx() ctx: MyContext
 	): Promise<Candidate> {
-		const candidateSteps = await this.getOrCreateCandidateSteps(ctx);
-
-		console.log({ candidateSteps });
+		const candidateSteps = await this.getOrCreateCandidateSteps(
+			ctx,
+			candidateInput.steps
+		);
 
 		const newCandidate = new Candidate();
 		newCandidate.name = candidateInput.name;
@@ -158,10 +182,11 @@ export class CandidateResolver {
 			CandidateLevel,
 			candidateInput.level
 		);
-		newCandidate.progress = CandidateProgress.PENDING;
+		newCandidate.progress =
+			candidateInput.progress || CandidateProgress.PENDING;
 		newCandidate.location = candidateInput.location;
 		newCandidate.status = CandidateStatus.OPEN;
-		newCandidate.currentStep = 0;
+		newCandidate.currentStep = candidateInput.currentStep || 0;
 		newCandidate.steps = candidateSteps;
 		newCandidate.createdBy = ctx.token || "";
 		newCandidate.updatedBy = ctx.token || "";
@@ -191,35 +216,56 @@ export class CandidateResolver {
 		@Arg("currentStep", () => Int, { nullable: true }) currentStep?: number,
 		@Arg("stepData", { nullable: true }) stepData?: string
 	): Promise<Candidate> {
-		const candidate = await this.candidateRepository.findOneOrFail({
+		const currentCandidate = await this.candidateRepository.findOneOrFail({
 			where: { id: id },
 			relations: ["steps"],
 		});
 
-		candidate.progress = getEnumValueFromKey(CandidateProgress, progress);
+		currentCandidate.progress = getEnumValueFromKey(
+			CandidateProgress,
+			progress
+		);
 		if (currentStep !== undefined) {
-			candidate.currentStep = currentStep;
+			currentCandidate.currentStep = currentStep;
 		}
 
-		console.log({ candidate }, { step: candidate.steps });
 		if (stepData) {
-			const steps = [...candidate.steps];
+			const steps = [...currentCandidate.steps];
+
 			const stepUpdate = JSON.parse(stepData);
 			const stepIndex = steps.findIndex(
 				(s) => s.indexPosition === stepUpdate.indexPosition
 			);
+
+			const previousStep = steps[stepIndex];
+
 			if (stepIndex >= 0) {
 				steps[stepIndex] = { ...steps[stepIndex], ...stepUpdate };
 			}
-			console.log({ steps });
-			console.log({ stepData });
+			if (steps[stepIndex].status === InterviewStatus.REJECTED) {
+				currentCandidate.progress = CandidateProgress.REJECTED;
+				currentCandidate.status = CandidateStatus.CLOSED;
+			}
+			if (
+				previousStep.status === InterviewStatus.REJECTED &&
+				steps[stepIndex].status === InterviewStatus.PENDING
+			) {
+				currentCandidate.progress = CandidateProgress.PENDING;
+				currentCandidate.status = CandidateStatus.OPEN;
+			}
 			const updatedStep = await this.interviewStepRepository.save(steps);
-			candidate.steps = updatedStep;
-
-			console.log({ cannyStep: candidate.steps });
+			currentCandidate.steps = updatedStep;
 		}
 
-		return await this.candidateRepository.save(candidate);
+		const updatedCandidate = await this.candidateRepository.save(
+			currentCandidate
+		);
+
+		const latestCandidate = await this.candidate(updatedCandidate.id);
+		if (latestCandidate === null) {
+			throw new Error("Candidate not found");
+		}
+		return latestCandidate;
 	}
 
 	@Mutation(() => Candidate)
@@ -256,7 +302,10 @@ export class CandidateResolver {
 		@Arg("id", () => ID) id: string,
 		@Arg("cvLink") cvLink: string
 	): Promise<Candidate> {
-		const candidate = await this.candidateRepository.findOneByOrFail({ id });
+		const candidate = await this.candidateRepository.findOneOrFail({
+			where: { id: id },
+			relations: ["steps"],
+		});
 
 		candidate.cvUrl = cvLink;
 
