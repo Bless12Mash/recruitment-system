@@ -26,6 +26,6 @@ export interface Candidate {
 	steps?: InterviewStep[];
 	createdAt?: Date;
 	updatedAt?: Date;
-	createdBy: string;
+	createdBy?: string;
 	cvUrl?: string;
 }

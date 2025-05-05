@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from faker import Faker
-from datetime import datetime, timedelta
 
 fake = Faker()
 
@@ -15,9 +14,9 @@ ROLES = [
     "Product Manager"
 ]
 
-LEVELS = ["Junior", "Mid", "Senior", "Lead"]
+LEVELS = ["JUNIOR", "MID", "SENIOR", "LEAD"]
 
-PROGRESS = ["Hired", "Rejected", "On Hold", "Shortlisted", "Pending", "Offered", "Offer Accepted", "Offer Rejected"]
+PROGRESS = ["HIRED", "REJECTED", "ON HOLD", "SHORTLISTED", "PENDING", "OFFERED", "OFFER ACCEPTED", "OFFER REJECTED"]
 
 # Generate 500 candidates
 num_candidates = 10
@@ -31,7 +30,6 @@ for _ in range(num_candidates):
         'role': np.random.choice(ROLES),
         'level': np.random.choice(LEVELS),
         'progress': np.random.choice(PROGRESS),
-        'createdBy': fake.name(),
         'location': fake.city(),
     }
     candidates.append(candidate)

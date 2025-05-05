@@ -132,7 +132,6 @@ export function CandidateDetails({ candidate, onUpdateStep, onCVUpload, onStatus
     };
 
     const handleProgressChange = (newProgress: CandidateProgress) => {
-        console.log({ newProgress })
         if (onProgressChange) {
             onProgressChange({
                 ...candidate,

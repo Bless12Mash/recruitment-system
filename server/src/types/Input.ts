@@ -1,6 +1,11 @@
 import { InputType, Field, Int, ObjectType } from "type-graphql";
 import { Candidate } from "../entities/Candidate";
-import { CandidateLevel, CandidateStatus } from "../../../shared/enums";
+import {
+	CandidateLevel,
+	CandidateProgress,
+	CandidateStatus,
+	InterviewStatus,
+} from "../../../shared/enums";
 
 @InputType()
 export class PaginationInput {
@@ -71,8 +76,8 @@ export class InterviewStepInput {
 	@Field()
 	name!: string;
 
-	@Field()
-	status!: string;
+	@Field(() => InterviewStatus)
+	status!: InterviewStatus;
 
 	@Field({ nullable: true })
 	feedback?: string;
@@ -95,8 +100,8 @@ export class CandidateInput {
 	@Field(() => CandidateLevel)
 	level!: CandidateLevel;
 
-	@Field({ nullable: true })
-	progress?: string;
+	@Field(() => CandidateProgress, { nullable: true })
+	progress?: CandidateProgress;
 
 	@Field()
 	location!: string;

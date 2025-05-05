@@ -26,7 +26,6 @@ export function parseExcelData(file: File): Promise<Candidate[]> {
 					location: row.location,
 					status: CandidateStatus.OPEN,
 					currentStep: 0,
-					createdBy: row.createdBy || "System Import",
 				}));
 
 				resolve(candidates);

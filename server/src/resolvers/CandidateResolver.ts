@@ -10,6 +10,7 @@ import { Candidate } from "../entities/Candidate";
 import {
 	CandidateFilterInput,
 	CandidateInput,
+	InterviewStepInput,
 	PaginatedCandidates,
 	PaginationInput,
 	SortInput,
@@ -78,8 +79,8 @@ export class CandidateResolver {
 				});
 			}
 			if (filter.progress && filter.progress !== "all") {
-				queryBuilder.andWhere("candidate.progress ILIKE :progress", {
-					progress: `%${filter.progress}%`,
+				queryBuilder.andWhere("candidate.progress = :progress", {
+					progress: filter.progress,
 				});
 			}
 		}
@@ -114,13 +115,35 @@ export class CandidateResolver {
 		"Final Interview",
 	] as const;
 
-	async getOrCreateCandidateSteps(ctx: MyContext) {
-		const interviewSteps = await this.interviewStepRepository.find();
-		console.log({ interviewSteps });
-		let candidateSteps: InterviewStep[] = [];
-		console.log({ check: interviewSteps.length === 0 });
-		if (interviewSteps.length === 0) {
-			this.INTERVIEW_STEPS.map(async (step, index) => {
+	async getOrCreateCandidateSteps(
+		ctx: MyContext,
+		steps?: InterviewStepInput[]
+	) {
+		if (steps !== undefined && steps !== null) {
+			let candidateSteps: InterviewStep[] = [];
+			const promises = steps?.map(async (step) => {
+				const candidateStep = new InterviewStep();
+
+				candidateStep.indexPosition = step.indexPosition;
+				candidateStep.name = step.name;
+				candidateStep.status = step.status;
+				candidateStep.feedback = step.feedback;
+				candidateStep.createdBy = ctx.token || "";
+				candidateStep.updatedBy = ctx.token || "";
+
+				const interviewStep =
+					this.interviewStepRepository.create(candidateStep);
+				await this.interviewStepRepository.save(interviewStep);
+				return interviewStep;
+			});
+
+			const results = await Promise.all(promises);
+			candidateSteps.push(...results);
+
+			return candidateSteps;
+		} else {
+			let candidateSteps: InterviewStep[] = [];
+			const promises = this.INTERVIEW_STEPS.map(async (step, index) => {
 				const candidateStep = new InterviewStep();
 
 				candidateStep.indexPosition = index;
@@ -132,13 +155,15 @@ export class CandidateResolver {
 				const interviewStep =
 					this.interviewStepRepository.create(candidateStep);
 				await this.interviewStepRepository.save(interviewStep);
-				candidateSteps.push(candidateStep);
+
+				return interviewStep;
 			});
-		} else {
-			candidateSteps = interviewSteps;
+
+			const results = await Promise.all(promises);
+			candidateSteps.push(...results);
+
+			return candidateSteps;
 		}
-		console.log({ candidateSteps });
-		return candidateSteps;
 	}
 
 	@Mutation(() => Candidate)
@@ -146,7 +171,10 @@ export class CandidateResolver {
 		@Arg("candidate") candidateInput: CandidateInput,
 		@Ctx() ctx: MyContext
 	): Promise<Candidate> {
-		const candidateSteps = await this.getOrCreateCandidateSteps(ctx);
+		const candidateSteps = await this.getOrCreateCandidateSteps(
+			ctx,
+			candidateInput.steps
+		);
 
 		console.log({ candidateSteps });
 
@@ -158,10 +186,11 @@ export class CandidateResolver {
 			CandidateLevel,
 			candidateInput.level
 		);
-		newCandidate.progress = CandidateProgress.PENDING;
+		newCandidate.progress =
+			candidateInput.progress || CandidateProgress.PENDING;
 		newCandidate.location = candidateInput.location;
 		newCandidate.status = CandidateStatus.OPEN;
-		newCandidate.currentStep = 0;
+		newCandidate.currentStep = candidateInput.currentStep || 0;
 		newCandidate.steps = candidateSteps;
 		newCandidate.createdBy = ctx.token || "";
 		newCandidate.updatedBy = ctx.token || "";
