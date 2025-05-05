@@ -174,8 +174,6 @@ export class CandidateResolver {
 			candidateInput.steps
 		);
 
-		console.log({ candidateSteps }, { pro: candidateInput.progress });
-
 		const newCandidate = new Candidate();
 		newCandidate.name = candidateInput.name;
 		newCandidate.email = candidateInput.email;
@@ -304,7 +302,10 @@ export class CandidateResolver {
 		@Arg("id", () => ID) id: string,
 		@Arg("cvLink") cvLink: string
 	): Promise<Candidate> {
-		const candidate = await this.candidateRepository.findOneByOrFail({ id });
+		const candidate = await this.candidateRepository.findOneOrFail({
+			where: { id: id },
+			relations: ["steps"],
+		});
 
 		candidate.cvUrl = cvLink;
 

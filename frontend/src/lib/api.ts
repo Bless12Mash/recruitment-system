@@ -249,6 +249,7 @@ export const candidateApi = {
                     createdAt
                     updatedAt
                     createdBy
+					cvUrl
                 }
             }
         `;
@@ -311,6 +312,7 @@ export const candidateApi = {
                     createdAt
                     updatedAt
                     createdBy
+					cvUrl
                 }
             }
         `;
